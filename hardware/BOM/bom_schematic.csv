@@ -1,0 +1,21 @@
+Quantity,Manufacturer Part Number,DigiKey Part Number,Description,Availability (checked 2026-09-19),Notes
+1,ESP32-WROVER-E-N8R8,5407-ESP32-WROVER-E-N8R8CT-ND,ESP32 module 8MB flash / 8MB PSRAM PCB antenna,Active; stock varies by region - verify,Qty 2 if dual-ESP32 BT offload
+1,TLV320DAC3100IRHBR,296-27216-1-ND,Stereo audio DAC w/ headphone amp VQFN-32,Active; in stock (thousands),DVDD needs 1.8V - see LDO line
+1,TLV75518PDBVR,296-TLV75518PDBVRCT-ND (verify),1.8V 500mA LDO SOT-23-5,Not checked,For DAC DVDD (1.65-1.95V)
+1,BQ24075RGTR,296-38874-1-ND,1-cell Li-ion charger w/ power-path,Active; in stock,
+1,TPS63020DSJT,296-27230-1-ND,Buck-boost regulator 3.3V out,Active; in stock,DSJR variant (296-36491-1-ND) was out of stock on digikey.com - DSJT is same chip on smaller reel
+1,XFL4020-152MEC,XFL4020-152MECCT-ND (verify),1.5uH inductor for TPS63020,Not checked,Check datasheet recommended inductor
+1,MAX17048G+T10,MAX17048G+T10CT-ND,LiPo fuel gauge I2C,Active; stock varies by region - verify,Optional
+1,CP2102N-A02-GQFN24R,336-5888-1-ND,USB-to-UART bridge QFN-24,Active; 20-wk mfr lead time,Buy early
+2,MMBT3904,MMBT3904FSCT-ND (verify),NPN transistor SOT-23,Not checked,ESP32 auto-reset (EN/IO0)
+1,USB4105-GF-A,2073-USB4105-GF-ACT-ND (verify),USB-C receptacle 16-pin,Not checked,
+2,RC0402FR-075K1L,311-5.10KLRCT-ND (verify),5.1k 0402 resistor,Not checked,USB-C CC1/CC2 pulldowns
+1,USBLC6-2SC6,497-5235-1-ND (verify),USB ESD protection SOT-23-6,Not checked,
+1,DM3AT-SF-PEJM5,HR1941CT-ND (verify),MicroSD push-push socket,Not checked,
+1,SJ-43514-SMT-TR,SJ-43514-SMT-TR-ND (verify),3.5mm 4-pole SMT jack w/ detect switch,Not checked,Confirm detect pin in datasheet
+5,TL3342F160QG/TR,EG5353CT-ND (verify),Low-profile SMD tactile switch,Not checked,D-pad + select
+1,JS102011SAQN,401-2002-1-ND (verify),SPDT slide switch,Not checked,Power/hold
+1,S2B-PH-SM4-TB(LF)(SN),455-1749-1-ND (verify),JST PH 2-pin SMD battery connector,Not checked,Match battery lead
+1,Adafruit 328,(verify),LiPo 3.7V 2500mAh w/ JST PH,Not checked,Or any flat 1500-2500mAh cell w/ protection PCB
+1,2.0in ST7789 bare panel + FPC,N/A,320x240 IPS TFT w/ FPC tail,Not on DigiKey - source AliExpress/BuyDisplay,Match FPC connector to panel pinout
+1,Passives kit,N/A,Decoupling caps / pull-ups / charger & regulator resistors,,Fill from reference schematics in each datasheet

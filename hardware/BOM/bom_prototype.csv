@@ -1,0 +1,8 @@
+Quantity,Manufacturer Part Number,DigiKey Part Number,Description,Availability (checked 2026-09-19),Notes
+1,ESP32-DEVKITC-VE,1965-ESP32-DEVKITC-VE-ND,ESP32-WROVER-E dev kit (8MB flash / 8MB PSRAM),Active,Main MCU; USB-UART + 3.3V onboard. Order 2 if testing dual-ESP32 BT offload
+1,Adafruit 6309,1528-6309-ND (verify),TLV320DAC3100 I2S DAC breakout w/ headphone jack,In stock at Adafruit; DigiKey listing unverified,Same DAC as final board; includes 1.8V reg and jack
+1,Adafruit 4682,1528-4682-ND (verify),MicroSD SPI/SDIO breakout 3V,Not checked,Music storage
+1,Adafruit 4311,1528-4311-ND (verify),2.0in 320x240 ST7789 IPS TFT breakout,Not checked,UI display
+1,Adafruit 1119,1528-1119-ND (verify),Tactile button pack (breadboard-friendly),Not checked,Need 5: up/down/left/right/select
+1,Adafruit 239,1528-2143-ND (verify),Full-size breadboard,Not checked,Skip if you already have one
+1,Adafruit 758,1528-1154-ND (verify),Male-male jumper wire pack,Not checked,Skip if you already have some
