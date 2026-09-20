@@ -1,21 +1,21 @@
-Quantity,Manufacturer Part Number,DigiKey Part Number,Description,Availability (checked 2026-09-19),Notes
-1,ESP32-WROVER-E-N8R8,5407-ESP32-WROVER-E-N8R8CT-ND,ESP32 module 8MB flash / 8MB PSRAM PCB antenna,Active; stock varies by region - verify,Qty 2 if dual-ESP32 BT offload
-1,TLV320DAC3100IRHBR,296-27216-1-ND,Stereo audio DAC w/ headphone amp VQFN-32,Active; in stock (thousands),DVDD needs 1.8V - see LDO line
-1,TLV75518PDBVR,296-TLV75518PDBVRCT-ND (verify),1.8V 500mA LDO SOT-23-5,Not checked,For DAC DVDD (1.65-1.95V)
-1,BQ24075RGTR,296-38874-1-ND,1-cell Li-ion charger w/ power-path,Active; in stock,
-1,TPS63020DSJT,296-27230-1-ND,Buck-boost regulator 3.3V out,Active; in stock,DSJR variant (296-36491-1-ND) was out of stock on digikey.com - DSJT is same chip on smaller reel
-1,XFL4020-152MEC,XFL4020-152MECCT-ND (verify),1.5uH inductor for TPS63020,Not checked,Check datasheet recommended inductor
-1,MAX17048G+T10,MAX17048G+T10CT-ND,LiPo fuel gauge I2C,Active; stock varies by region - verify,Optional
-1,CP2102N-A02-GQFN24R,336-5888-1-ND,USB-to-UART bridge QFN-24,Active; 20-wk mfr lead time,Buy early
-2,MMBT3904,MMBT3904FSCT-ND (verify),NPN transistor SOT-23,Not checked,ESP32 auto-reset (EN/IO0)
-1,USB4105-GF-A,2073-USB4105-GF-ACT-ND (verify),USB-C receptacle 16-pin,Not checked,
-2,RC0402FR-075K1L,311-5.10KLRCT-ND (verify),5.1k 0402 resistor,Not checked,USB-C CC1/CC2 pulldowns
-1,USBLC6-2SC6,497-5235-1-ND (verify),USB ESD protection SOT-23-6,Not checked,
-1,DM3AT-SF-PEJM5,HR1941CT-ND (verify),MicroSD push-push socket,Not checked,
-1,SJ-43514-SMT-TR,SJ-43514-SMT-TR-ND (verify),3.5mm 4-pole SMT jack w/ detect switch,Not checked,Confirm detect pin in datasheet
-5,TL3342F160QG/TR,EG5353CT-ND (verify),Low-profile SMD tactile switch,Not checked,D-pad + select
-1,JS102011SAQN,401-2002-1-ND (verify),SPDT slide switch,Not checked,Power/hold
-1,S2B-PH-SM4-TB(LF)(SN),455-1749-1-ND (verify),JST PH 2-pin SMD battery connector,Not checked,Match battery lead
-1,Adafruit 328,(verify),LiPo 3.7V 2500mAh w/ JST PH,Not checked,Or any flat 1500-2500mAh cell w/ protection PCB
-1,2.0in ST7789 bare panel + FPC,N/A,320x240 IPS TFT w/ FPC tail,Not on DigiKey - source AliExpress/BuyDisplay,Match FPC connector to panel pinout
-1,Passives kit,N/A,Decoupling caps / pull-ups / charger & regulator resistors,,Fill from reference schematics in each datasheet
+Quantity,Manufacturer Part Number,DigiKey Part Number,Description,Availability (checked 2026-09-19),Notes,Found MPN,DK Part # (small qty),Status,Qty Available,Unit Price,Mfr Lead (wks),URL
+1,ESP32-WROVER-E-N8R8,5407-ESP32-WROVER-E-N8R8CT-ND,ESP32 module 8MB flash / 8MB PSRAM PCB antenna,Active; 16844 in stock (2026-09-19),Qty 2 if dual-ESP32 BT offload,ESP32-WROVER-E-N8R8,5407-ESP32-WROVER-E-N8R8CT-ND,Active,16844,5.88,8,https://www.digikey.com/en/products/detail/espressif-systems/ESP32-WROVER-E-N8R8/11613126
+1,TLV320DAC3100IRHBT,296-39266-1-ND,Stereo audio DAC with headphone amp VQFN-32,Active; 120 in stock (2026-09-19),Same DAC and VQFN-32 package as prototype breakout; replaces out-of-stock TLV320DAC3100IRHBR packaging,TLV320DAC3100IRHBT,296-39266-1-ND,Active,120,2.34,16,https://www.digikey.com/en/products/detail/texas-instruments/TLV320DAC3100IRHBT/2353656
+1,TLV75518PDBVR,296-50410-1-ND,1.8V 500mA LDO SOT-23-5,Active; 16399 in stock (2026-09-19),For DAC DVDD (1.65-1.95V),TLV75518PDBVR,296-50410-1-ND,Active,16399,0.42,9,https://www.digikey.com/en/products/detail/texas-instruments/TLV75518PDBVR/9356529
+1,BQ24075RGTR,296-38874-1-ND,1-cell Li-ion charger with power-path,Active; 3026 in stock (2026-09-19),,BQ24075RGTR,296-38874-1-ND,Active,3026,2.43,9,https://www.digikey.com/en/products/detail/texas-instruments/BQ24075RGTR/2047273
+1,TPS63020DSJT,296-27230-1-ND,3.3V buck-boost regulator,Active; 1860 in stock (2026-09-19),DSJT is the verified stocked package variant,TPS63020DSJT,296-27230-1-ND,Active,1860,5.0,16,https://www.digikey.com/en/products/detail/texas-instruments/TPS63020DSJT/2263063
+1,XAL4020-152MEC,2457-XAL4020-152MEC-ND,1.5uH power inductor for TPS63020,Active; 1375 in stock (2026-09-19),Substitutes unresolved XFL4020-152MEC; confirm current/thermal margin against the final power budget,XAL4020-152MEC,2457-XAL4020-152MEC-ND,Active,1375,3.38,0,https://www.digikey.com/en/products/detail/coilcraft/XAL4020-152MEC/21381577
+1,MAX17048G+T10,MAX17048G+T10CT-ND,LiPo fuel gauge I2C,Active; 24932 in stock (2026-09-19),Optional,MAX17048G+T10,MAX17048G+T10CT-ND,Active,24932,4.61,13,https://www.digikey.com/en/products/detail/analog-devices-inc-maxim-integrated/MAX17048G-T10/3758921
+1,CP2102N-A02-GQFN24R,336-5888-1-ND,USB-to-UART bridge QFN-24,Active; 13500 in stock (2026-09-19),31-week manufacturer lead time; buy early,CP2102N-A02-GQFN24R,336-5888-1-ND,Active,13500,5.15,31,https://www.digikey.com/en/products/detail/silicon-labs/CP2102N-A02-GQFN24R/9863479
+2,MMBT3904-7-F,MMBT3904-FDICT-ND,NPN transistor SOT-23,Active; 60513 in stock (2026-09-19),Replaces inventory-inconsistent MMBT3904LT1G for ESP32 auto-reset (EN/IO0); verify pinout against schematic,MMBT3904-7-F,MMBT3904-FDICT-ND,Active,60513,,,
+1,USB4105-GF-A,2073-USB4105-GF-ACT-ND,USB-C receptacle 16-pin,Active; 131974 in stock (2026-09-19),,USB4105-GF-A,2073-USB4105-GF-ACT-ND,Active,131974,0.8,7,https://www.digikey.com/en/products/detail/gct/USB4105-GF-A/11198441
+2,RC0402FR-075K1L,311-5.10KLRCT-ND,5.1k 0402 resistor,Active; 977798 in stock (2026-09-19),USB-C CC1/CC2 pulldowns,RC0402FR-075K1L,311-5.10KLRCT-ND,Active,977798,0.1,17,https://www.digikey.com/en/products/detail/yageo/RC0402FR-075K1L/726624
+1,USBLC6-2P6,497-5026-1-ND,USB ESD protection diode array,Active; 104049 in stock (2026-09-19),Replaces out-of-stock USBLC6-2SC6; verify the SOT-666 footprint and pinout because it is not a SOT-23-6 drop-in,USBLC6-2P6,497-5026-1-ND,Active,104049,0.26,14,https://www.digikey.com/en/products/detail/stmicroelectronics/USBLC6-2P6/1007440
+1,DM3AT-SF-PEJM5,HR1964CT-ND,MicroSD push-push socket,Active; 27897 in stock (2026-09-19),,DM3AT-SF-PEJM5,HR1964CT-ND,Active,27897,3.55,16,https://www.digikey.com/en/products/detail/hirose-electric-co-ltd/DM3AT-SF-PEJM5/2533565
+1,SJ-43514-SMT-TR,CP-43514SJCT-ND,3.5mm 4-pole SMT jack with detect switch,Active; 7051 in stock (2026-09-19),Confirm detect pin in schematic,SJ-43514-SMT-TR,CP-43514SJCT-ND,Active,7051,1.52,13,https://www.digikey.com/en/products/detail/same-sky-formerly-cui-devices/SJ-43514-SMT-TR/669724
+5,TL3342F160QG/TR,EG2531CT-ND,Low-profile SMD tactile switch,Active; 75251 in stock (2026-09-19),D-pad + select,TL3342F160QG/TR,EG2531CT-ND,Active,75251,0.59,17,https://www.digikey.com/en/products/detail/e-switch/TL3342F160QG-TR/379003
+1,JS102011SAQN,401-1999-1-ND,SPDT slide switch,Active; 55924 in stock (2026-09-19),Power/hold,JS102011SAQN,401-1999-1-ND,Active,55924,0.85,14,https://www.digikey.com/en/products/detail/c-k/JS102011SAQN/1640095
+1,S2B-PH-SM4-TB,455-S2B-PH-SM4-TBCT-ND,JST PH 2-pin SMD battery connector,Active; 157221 in stock (2026-09-19),Match battery lead,S2B-PH-SM4-TB,455-S2B-PH-SM4-TBCT-ND,Active,157221,0.49,16,https://www.digikey.com/en/products/detail/jst-sales-america-inc/S2B-PH-SM4-TB/926655
+1,Adafruit 328,1528-328-ND,LiPo 3.7V 2500mAh with JST PH,HOLD: API returned a mismatched fuzzy result; confirm exact battery stock before order,Mechanical fit and protection PCB must be verified,4210,1528-4210-ND,Active,14352,0.95,4,https://www.digikey.com/en/products/detail/adafruit-industries-llc/4210/10230021
+1,4311,1528-4311-ND,2.0in 320x240 ST7789 IPS TFT breakout,Active; 656 in stock (2026-09-19),Same display module as prototype for an unchanged display driver; mount/connect from the main PCB,4311,1528-4311-ND,Active,656,19.95,4,https://www.digikey.com/en/products/detail/adafruit-industries-llc/4311/10313914
+1,Passives kit,N/A,Decoupling caps / pull-ups / charger & regulator resistors,HOLD: values and quantities are not yet in a schematic,Create line items from each IC reference design before releasing a purchase order,,,SKIPPED,,,,

@@ -1,8 +1,9 @@
-Quantity,Manufacturer Part Number,DigiKey Part Number,Description,Availability (checked 2026-09-19),Notes
-1,ESP32-DEVKITC-VE,1965-ESP32-DEVKITC-VE-ND,ESP32-WROVER-E dev kit (8MB flash / 8MB PSRAM),Active,Main MCU; USB-UART + 3.3V onboard. Order 2 if testing dual-ESP32 BT offload
-1,Adafruit 6309,1528-6309-ND (verify),TLV320DAC3100 I2S DAC breakout w/ headphone jack,In stock at Adafruit; DigiKey listing unverified,Same DAC as final board; includes 1.8V reg and jack
-1,Adafruit 4682,1528-4682-ND (verify),MicroSD SPI/SDIO breakout 3V,Not checked,Music storage
-1,Adafruit 4311,1528-4311-ND (verify),2.0in 320x240 ST7789 IPS TFT breakout,Not checked,UI display
-1,Adafruit 1119,1528-1119-ND (verify),Tactile button pack (breadboard-friendly),Not checked,Need 5: up/down/left/right/select
-1,Adafruit 239,1528-2143-ND (verify),Full-size breadboard,Not checked,Skip if you already have one
-1,Adafruit 758,1528-1154-ND (verify),Male-male jumper wire pack,Not checked,Skip if you already have some
+Quantity,Manufacturer Part Number,DigiKey Part Number,Description,Availability (checked 2026-09-19),Notes,Found MPN,DK Part # (small qty),Status,Qty Available,Unit Price,Mfr Lead (wks),URL
+1,ESP32-DEVKITC-VIE,1965-ESP32-DEVKITC-VIE-ND,ESP32-WROVER-IE dev kit (8MB flash / 8MB PSRAM),Active; 772 in stock (2026-09-19),Replaces out-of-stock ESP32-DEVKITC-VE; preserves original ESP32 classic Bluetooth and WROVER PSRAM. Confirm external antenna arrangement for bench use,ESP32-DEVKITC-VIE,1965-ESP32-DEVKITC-VIE-ND,Active,772,,,https://www.digikey.com/en/products/detail/espressif-systems/ESP32-DEVKITC-VIE/12091811
+1,ANTX200P001B24003,311-1553-ND,2.4GHz flat patch antenna with IPEX connector,Active; 11743 in stock (2026-09-20),Connects to the ESP32-DEVKITC-VIE external antenna connector; place away from metal and the battery,ANTX200P001B24003,311-1553-ND,Active,11743,,,https://www.digikey.com/en/products/detail/pulse-electronics/ANTX200P001B24003/3927174
+1,6309,1528-6309-ND,TLV320DAC3100 I2S DAC breakout with headphone jack,Active; 237 in stock (2026-09-19),Same DAC family as final board; includes 1.8V regulator and jack,6309,1528-6309-ND,Active,237,6.95,4,https://www.digikey.com/en/products/detail/adafruit-industries-llc/6309/26552626
+1,4682,1528-4682-ND,MicroSD SPI/SDIO breakout 3V,Active; 3245 in stock (2026-09-19),Music storage,4682,1528-4682-ND,Active,3245,3.5,4,https://www.digikey.com/en/products/detail/adafruit-industries-llc/4682/12822319
+1,4311,1528-4311-ND,2.0in 320x240 ST7789 IPS TFT breakout,Active; 656 in stock (2026-09-19),Use the same ST7789 display module in the first hardware build to keep the display driver unchanged,4311,1528-4311-ND,Active,656,19.95,4,https://www.digikey.com/en/products/detail/adafruit-industries-llc/4311/10313914
+1,1119,1528-1119-ND,Tactile button pack (breadboard-friendly),Active; 187 in stock (2026-09-19),Need 5: up/down/left/right/select,1119,1528-1119-ND,Active,187,2.5,18,https://www.digikey.com/en/products/detail/adafruit-industries-llc/1119/7241449
+1,239,1528-239-ND,Full-size breadboard,Active; 3799 in stock (2026-09-19),Corrects the previous camera-cable part number. Skip if you already have one,239,1528-239-ND,Active,3799,5.95,4,https://www.digikey.com/en/products/detail/adafruit-industries-llc/239/7244929
+1,WK-3,BKWK-3-ND,22AWG breadboard jumper kit (70 pieces),Active; 1341 in stock (2026-09-19),Replaces out-of-stock Adafruit 758 jumper pack; use for prototype wiring,WK-3,BKWK-3-ND,Active,1341,,,

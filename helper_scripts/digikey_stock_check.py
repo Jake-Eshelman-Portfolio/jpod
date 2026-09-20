@@ -60,7 +60,7 @@ def product_details(pn, h):
 
 
 def keyword_search(pn, h):
-    """Fallback fuzzy search; returns best-matching Product or None."""
+    """Return only an exact manufacturer-part-number match from keyword search."""
     r = requests.post(
         f"{API}/products/v4/search/keyword",
         headers={**h, "Content-Type": "application/json"},
@@ -73,7 +73,34 @@ def keyword_search(pn, h):
     for p in prods:  # prefer exact MPN match
         if p.get("ManufacturerProductNumber", "").upper() == pn.upper():
             return p
-    return prods[0] if prods else None
+    return None
+
+
+def matches_requested_part(product, mpn, dkpn):
+    """Return whether a product exactly matches the requested MPN or DigiKey part number."""
+    if product.get("ManufacturerProductNumber", "").upper() == mpn.upper():
+        return True
+    expected_dkpn = dkpn.upper()
+    return any(
+        variation.get("DigiKeyProductNumber", "").upper() == expected_dkpn
+        for variation in product.get("ProductVariations") or []
+    )
+
+
+def positive_quantity(product):
+    """Return a positive stock quantity, or zero when DigiKey reports none or no value."""
+    try:
+        return max(0, int(product.get("QuantityAvailable") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def is_in_stock(product):
+    """Return whether DigiKey marks the exact product active with positive inventory."""
+    return (
+        (product.get("ProductStatus") or {}).get("Status") == "Active"
+        and positive_quantity(product) > 0
+    )
 
 
 def summarize(p):
@@ -105,12 +132,16 @@ def check_bom(path, h):
         if mpn and not mpn.lower().startswith(("passives", "2.0in")):
             p = None
             for q in filter(None, [mpn, dkpn if dkpn not in ("N/A", "(verify)") else ""]):
-                p = product_details(q, h)
-                if p:
+                candidate = product_details(q, h)
+                if candidate and matches_requested_part(candidate, mpn, dkpn):
+                    p = candidate
                     break
-            p = p or keyword_search(mpn, h)
+            if not p:
+                p = keyword_search(mpn, h)
             if p:
                 result = summarize(p)
+                if not is_in_stock(p):
+                    result["Status"] = "OUT OF STOCK"
         else:
             result["Status"] = "SKIPPED"
         out.append({**row, **result})
