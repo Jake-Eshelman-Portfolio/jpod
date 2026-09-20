@@ -23,7 +23,7 @@ The prototype and first hardware build deliberately share the ESP32-WROVER platf
 
 | Part | DigiKey part | Selection and role |
 | --- | --- | --- |
-| ESP32-WROVER-E-N8R8 | `5407-ESP32-WROVER-E-N8R8CT-ND` | This stocked ESP32 module is the production version of the prototype’s compute, Wi-Fi, Bluetooth, and buffered-audio platform and has its own PCB antenna. |
+| ESP32-WROVER-E-N16R8 | `1965-ESP32-WROVER-E-N16R8CT-ND` | This stocked ESP32 module provides 16 MB flash and 8 MB PSRAM for the production compute, Wi-Fi, Bluetooth, and buffered-audio platform and has its own PCB antenna. |
 | TLV320DAC3100IRHBT | `296-39266-1-ND` | This stocked TLV320DAC3100 in the same VQFN-32 package as the prototype codec converts I2S audio to headphone-level analog output. |
 | TLV75518PDBVR | `296-50410-1-ND` | This stocked 1.8 V regulator powers the DAC digital supply within its required voltage range. |
 | BQ24075RGTR | `296-38874-1-ND` | This stocked charger safely charges the single-cell LiPo while powering the player from USB. |
@@ -43,19 +43,6 @@ The prototype and first hardware build deliberately share the ESP32-WROVER platf
 | Adafruit 328 | `1528-328-ND` | This planned 3.7 V 2500 mAh LiPo supplies portable power, but it is a **hold** because the API returned a mismatched product and mechanical fit and exact stock are unverified. |
 | Adafruit 4311 | `1528-4311-ND` | This stocked ST7789 display module is retained for the first hardware build to reuse the complete prototype display driver; the main PCB must provide a mechanical mounting and electrical connection plan. |
 | Passives | `N/A` | Decoupling capacitors, pull-ups, and regulator/charger-setting resistors are a **hold** until the schematic specifies their values, quantities, voltage ratings, and footprints. |
-
-## Substitutions
-
-| Original selection | Released selection | Reason |
-| --- | --- | --- |
-| XFL4020-152MEC | XAL4020-152MEC (`2457-XAL4020-152MEC-ND`) | The original did not resolve in the DigiKey API, while the replacement is a stocked 1.5 uH power inductor suitable for TPS63020 review. |
-| MMBT3904 | MMBT3904-7-F (`MMBT3904-FDICT-ND`) | The original is obsolete and the first substitute had inconsistent API/page inventory, while this replacement is an active, stocked SOT-23 NPN transistor. |
-| Adafruit 2143 (`1528-2143-ND`) | Adafruit 239 (`1528-239-ND`) | The original part number is a Raspberry Pi camera cable, while the replacement is the intended stocked full-size breadboard. |
-| ESP32-DEVKITC-VE | ESP32-DEVKITC-VIE (`1965-ESP32-DEVKITC-VIE-ND`) | The original DevKit is out of stock, while the replacement retains the original ESP32 and WROVER PSRAM platform with an external-antenna configuration. |
-| Adafruit 758 | WK-3 (`BKWK-3-ND`) | The original jumper pack is out of stock, while the replacement is a stocked 70-piece 22 AWG breadboard jumper kit. |
-| TLV320DAC3100IRHBR | TLV320DAC3100IRHBT (`296-39266-1-ND`) | The original packaging is out of stock, while the replacement is the same DAC in the same VQFN-32 package with positive inventory. |
-| USBLC6-2SC6 | USBLC6-2P6 (`497-5026-1-ND`) | The original is out of stock, while the replacement is a stocked two-line USB ESD array that requires a new SOT-666 footprint and pinout review. |
-| Bare ST7789 panel plus FPC | Adafruit 4311 (`1528-4311-ND`) | Using the stocked prototype display module for the first hardware build avoids an unverified panel, FPC connector, and a separate driver port. |
 
 ## Purchase Release Checklist
 
