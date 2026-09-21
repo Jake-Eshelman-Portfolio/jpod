@@ -62,6 +62,8 @@ hardware/KiCAD/**/fp-info-cache
 hardware/KiCAD/**/fp-info-cache/**
 hardware/KiCAD/**/*-backups/
 hardware/KiCAD/**/library/archive/
+hardware/KiCAD/**/\#auto_saved_files\#/
+hardware/KiCAD/**/_autosave-*.kicad_*
 hardware/KiCAD/**/*.kicad_prl
 hardware/KiCAD/**/*.lck
 hardware/KiCAD/**/*.zip
@@ -69,4 +71,4 @@ hardware/KiCAD/**/*.bak
 hardware/KiCAD/**/*.kicad_pro-bak
 hardware/KiCAD/**/*.kicad_sch-bak
 hardware/KiCAD/**/*.kicad_pcb-bak
-hardware/KiCAD/**/*~
+hardware/KiCAD/**/*~hardware/KiCAD/**/#auto_saved_files#
