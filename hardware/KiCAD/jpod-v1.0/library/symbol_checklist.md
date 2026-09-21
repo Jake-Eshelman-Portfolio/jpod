@@ -16,7 +16,7 @@
 | USBLC6-2P6 | `497-5026-1-ND` | This stocked USB ESD protector shields the USB data lines from static discharge, but its SOT-666 footprint and pinout must replace the former SOT-23-6 design. |
 | DM3AT-SF-PEJM5 | `HR1964CT-ND` | This stocked push-push socket holds the removable microSD music card. |
 | SJ-43514-SMT-TR | `CP-43514SJCT-ND` | This stocked 3.5 mm jack provides wired headphone audio and a detect contact; confirm the detect pin in the schematic. |
-| TL3342F160QG/TR | `EG2531CT-ND` | These stocked low-profile switches form the D-pad and select button. |
+| TL3342F160QG/TR | `EG2531CT-ND` | Complete | [Snap Magic](https://www.digikey.com/en/models/379003?tab=snapmagic)
 | JS102011SAQN | `401-1999-1-ND` | This stocked SPDT switch is used for power or hold control. |
 | S2B-PH-SM4-TB | `455-S2B-PH-SM4-TBCT-ND` | This stocked JST-PH connector mates the protected LiPo battery to the board. |
 | Adafruit 328 | `1528-328-ND` | This planned 3.7 V 2500 mAh LiPo supplies portable power, but it is a **hold** because the API returned a mismatched product and mechanical fit and exact stock are unverified. |
