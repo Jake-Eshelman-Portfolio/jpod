@@ -61,6 +61,7 @@ helper_scripts/*.csv
 hardware/KiCAD/**/fp-info-cache
 hardware/KiCAD/**/fp-info-cache/**
 hardware/KiCAD/**/*-backups/
+hardware/KiCAD/**/library/archive/
 hardware/KiCAD/**/*.kicad_prl
 hardware/KiCAD/**/*.lck
 hardware/KiCAD/**/*.zip
