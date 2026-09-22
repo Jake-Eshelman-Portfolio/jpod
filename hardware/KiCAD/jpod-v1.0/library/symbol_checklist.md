@@ -20,5 +20,6 @@
 | JS102011SAQN | `401-1999-1-ND` | This stocked SPDT switch is used for power or hold control. |
 | S2B-PH-SM4-TB | `455-S2B-PH-SM4-TBCT-ND` | This stocked JST-PH connector mates the protected LiPo battery to the board. |
 | Adafruit 328 | `1528-328-ND` | This planned 3.7 V 2500 mAh LiPo supplies portable power, but it is a **hold** because the API returned a mismatched product and mechanical fit and exact stock are unverified. |
-| Adafruit 4311 | `1528-4311-ND` | This stocked ST7789 display module is retained for the first hardware build to reuse the complete prototype display driver; the main PCB must provide a mechanical mounting and electrical connection plan. |
+| ER-TFT020-7 | `N/A` | Final display for the custom board; add/verify the display symbol and its 22-pin FFC pinout before layout. |
+| FH12-22S-0.5SH(55) | `H125180CT-ND` | Required 22-position 0.5 mm FFC/FPC display header; verify footprint, contact orientation, and the mating cable before layout. [DigiKey](https://www.digikey.com/en/products/detail/hirose-electric-co-ltd/FH12-22S-0-5SH-55/1110380) |
 | Passives | `N/A` | Decoupling capacitors, pull-ups, and regulator/charger-setting resistors are a **hold** until the schematic specifies their values, quantities, voltage ratings, and footprints. |

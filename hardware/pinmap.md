@@ -16,10 +16,10 @@ DIY music player (JPod). Module: **ESP32-WROVER-E-N16R8** (16 MB flash, 8 MB PSR
 | | WS / LRCLK | IO25 | |
 | | DOUT (data to DAC) | IO14 | |
 | | MCLK | *(optional)* GPIO0 | DAC can run off BCLK via internal PLL; only wire MCLK if needed — GPIO0 is shared with boot/auto-reset, so avoid if you can |
-| **SPI bus** (display + SD, shared) | SCK | IO18 | |
+| **SPI bus** (ER-TFT020-7 display + SD, shared) | SCK | IO18 | |
 | | MOSI | IO23 | |
 | | MISO | IO19 | SD only (ST7789 is write-only) |
-| **Display (ST7789)** | CS | IO5 | strapping — safe as an output |
+| **Display (ER-TFT020-7)** | CS | IO5 | strapping — safe as an output |
 | | DC | IO27 | |
 | | RST | *(tie to EN)* | share the ESP32 reset to save a pin, or use a free GPIO |
 | | BL (backlight) | IO4 | PWM dimming |
@@ -138,6 +138,8 @@ DIY music player (JPod). Module: **ESP32-WROVER-E-N16R8** (16 MB flash, 8 MB PSR
 
 - [ ] Confirm SJ-43514 detect-pin behavior (which contact, active level).
 - [ ] Decide MCLK: rely on DAC internal PLL (preferred) vs wire GPIO0.
+- [ ] Verify the ER-TFT020-7 FFC pinout, power rails, and backlight connection before finalizing the display net labels.
+- [ ] Confirm FH12-22S-0.5SH(55) footprint, FFC contact orientation, and cable length.
 - [ ] Decide LCD_RST: tie to EN vs dedicate a GPIO.
 - [ ] Wire BQ24075 CHG/PGOOD status to GPIO? (optional UI nicety)
 - [ ] Add external 10k pull-ups for the 4 input-only D-pad buttons.
