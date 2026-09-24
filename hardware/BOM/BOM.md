@@ -45,6 +45,12 @@ The prototype and first hardware build share the ESP32-WROVER platform, TLV320DA
 | FH12-22S-0.5SH(55) | `H125180CT-ND` | Hirose 22-position, 0.5 mm pitch FFC/FPC PCB header for the ER-TFT020-7. Confirm FFC contact orientation and cable length; [DigiKey product page](https://www.digikey.com/en/products/detail/hirose-electric-co-ltd/FH12-22S-0-5SH-55/1110380). |
 | Passives | `N/A` | Decoupling capacitors, pull-ups, and regulator/charger-setting resistors are a **hold** until the schematic specifies their values, quantities, voltage ratings, and footprints. |
 
+## Obsolete Part Note
+
+- `TPS65810RTQT` is considered obsolete for this project and should not be added to future BOM revisions.
+- If that PMIC family is required for a derivative design, prefer `TPS65810RTQR` first, with `TPS65811RTQR` as a secondary option.
+- Before release, perform rail-by-rail output verification, I2C register-map comparison, startup-sequence validation, and charger behavior checks.
+
 ## Purchase Release Checklist
 
 1. Order the listed IPEX antenna with the ESP32-DEVKITC-VIE and keep it clear of metal and the battery during bench testing.
