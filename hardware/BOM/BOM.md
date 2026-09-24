@@ -40,7 +40,7 @@ The prototype and first hardware build share the ESP32-WROVER platform, TLV320DA
 | TL3342F160QG/TR | `EG2531CT-ND` | These stocked low-profile switches form the D-pad and select button. |
 | JS102011SAQN | `401-1999-1-ND` | This stocked SPDT switch is used for power or hold control. |
 | S2B-PH-SM4-TB | `455-S2B-PH-SM4-TBCT-ND` | This stocked JST-PH connector mates the protected LiPo battery to the board. |
-| Adafruit 328 | `1528-328-ND` | This planned 3.7 V 2500 mAh LiPo supplies portable power, but it is a **hold** because the API returned a mismatched product and mechanical fit and exact stock are unverified. |
+| RB-SP922-L | `4545-RB-SP922-L-ND` | This stocked 3.7 V 2000 mAh Li-Ion pack is selected for portable power; verify connector polarity and mating with `S2B-PH-SM4-TB` plus enclosure fit before release. |
 | ER-TFT020-7 | `N/A` | Final 2-inch TFT display for the custom board. Confirm the controller pinout, power rails, mechanical fit, and compatible 22-position 0.5 mm FFC cable before release. |
 | FH12-22S-0.5SH(55) | `H125180CT-ND` | Hirose 22-position, 0.5 mm pitch FFC/FPC PCB header for the ER-TFT020-7. Confirm FFC contact orientation and cable length; [DigiKey product page](https://www.digikey.com/en/products/detail/hirose-electric-co-ltd/FH12-22S-0-5SH-55/1110380). |
 | Passives | `N/A` | Decoupling capacitors, pull-ups, and regulator/charger-setting resistors are a **hold** until the schematic specifies their values, quantities, voltage ratings, and footprints. |
@@ -54,7 +54,7 @@ The prototype and first hardware build share the ESP32-WROVER platform, TLV320DA
 ## Purchase Release Checklist
 
 1. Order the listed IPEX antenna with the ESP32-DEVKITC-VIE and keep it clear of metal and the battery during bench testing.
-2. Select and fit-check an exact protected LiPo pack, then verify its exact DigiKey listing rather than accepting a fuzzy API match.
+2. Fit-check the selected battery pack (`RB-SP922-L`), and verify connector polarity, mating with `S2B-PH-SM4-TB`, and protected-pack behavior before release.
 3. Finish the schematic and replace the passive placeholder with individual, stocked component lines.
 4. For the custom PCB, keep the WROVER-E module's PCB antenna at the board edge and follow Espressif's antenna keepout; do not add a chip antenna or external antenna unless switching to an external-antenna ESP32 module.
 5. Confirm the TPS63020 inductor current and thermal limits, transistor pinout, USB ESD SOT-666 footprint and pinout, jack-detect wiring, and ER-TFT020-7 FFC pinout, cable orientation, and mechanical mounting before ordering the custom PCB.
