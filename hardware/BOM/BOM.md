@@ -27,6 +27,8 @@ The prototype and first hardware build share the ESP32-WROVER platform, TLV320DA
 | TLV320DAC3100IRHBT | `296-39266-1-ND` | This stocked TLV320DAC3100 in the same VQFN-32 package as the prototype codec converts I2S audio to headphone-level analog output. |
 | TLV75518PDBVR | `296-50410-1-ND` | This stocked 1.8 V regulator powers the DAC digital supply within its required voltage range. |
 | BQ24075RGTR | `296-38874-1-ND` | This stocked charger safely charges the single-cell LiPo while powering the player from USB. |
+| APT1608SGC | `N/A` | Green 1608 SMD charge-indicator LED; verify supply, footprint, LED polarity, current-limiting resistor, and charger status wiring before release. |
+| APT1608SYCK | `N/A` | Yellow 1608 SMD charge-indicator LED; verify supply, footprint, LED polarity, current-limiting resistor, and charger status wiring before release. |
 | TPS63020DSJT | `296-27230-1-ND` | This stocked buck-boost regulator holds the system rail at 3.3 V as the battery voltage rises and falls. |
 | XAL4020-152MEC | `2457-XAL4020-152MEC-ND` | This stocked 1.5 uH inductor replaces the unresolved XFL4020 part and stores energy for the TPS63020 converter; verify its current and temperature margin against the final power budget. |
 | MAX17048G+T10 | `MAX17048G+T10CT-ND` | This stocked optional fuel-gauge IC reports battery state of charge to the firmware over I2C. |
@@ -40,7 +42,7 @@ The prototype and first hardware build share the ESP32-WROVER platform, TLV320DA
 | TL3342F160QG/TR | `EG2531CT-ND` | These stocked low-profile switches form the D-pad and select button. |
 | JS102011SAQN | `401-1999-1-ND` | This stocked SPDT switch is used for power or hold control. |
 | S2B-PH-SM4-TB | `455-S2B-PH-SM4-TBCT-ND` | This stocked JST-PH connector mates the protected LiPo battery to the board. |
-| RB-SP922-L | `4545-RB-SP922-L-ND` | This stocked 3.7 V 2000 mAh Li-Ion pack is selected for portable power; verify connector polarity and mating with `S2B-PH-SM4-TB` plus enclosure fit before release. |
+| Adafruit 328 | `1528-1840-ND` | This stocked 3.7 V 2500 mAh LiPo pouch cell has a built-in protection circuit and a JST PHR-2 lead that mates with `S2B-PH-SM4-TB`. Adafruit wires red (+) to pin 1, so the connector must be BAT+ on pin 1 and GND on pin 2; check this against the cell drawing. Use Adafruit 2011 (`1528-1857-ND`, 2000 mAh) as the alternate if the enclosure is too tight. |
 | ER-TFT020-7 | `N/A` | Final 2-inch TFT display for the custom board. Confirm the controller pinout, power rails, mechanical fit, and compatible 22-position 0.5 mm FFC cable before release. |
 | FH12-22S-0.5SH(55) | `H125180CT-ND` | Hirose 22-position, 0.5 mm pitch FFC/FPC PCB header for the ER-TFT020-7. Confirm FFC contact orientation and cable length; [DigiKey product page](https://www.digikey.com/en/products/detail/hirose-electric-co-ltd/FH12-22S-0-5SH-55/1110380). |
 | Passives | `N/A` | Decoupling capacitors, pull-ups, and regulator/charger-setting resistors are a **hold** until the schematic specifies their values, quantities, voltage ratings, and footprints. |
@@ -54,7 +56,7 @@ The prototype and first hardware build share the ESP32-WROVER platform, TLV320DA
 ## Purchase Release Checklist
 
 1. Order the listed IPEX antenna with the ESP32-DEVKITC-VIE and keep it clear of metal and the battery during bench testing.
-2. Fit-check the selected battery pack (`RB-SP922-L`), and verify connector polarity, mating with `S2B-PH-SM4-TB`, and protected-pack behavior before release.
-3. Finish the schematic and replace the passive placeholder with individual, stocked component lines.
+2. Fit-check the Adafruit 328 pouch cell (or 2011 alternate) against the enclosure. Before PCB release, add the `S2B-PH-SM4-TB` battery connector to the schematic with pin 1 = BAT+ and pin 2 = GND, and confirm this matches the cell's lead drawing.
+3. Finish the schematic, add both charge-indicator LEDs with suitable current-limiting resistors and validated charger status wiring, and replace the passive placeholder with individual, stocked component lines.
 4. For the custom PCB, keep the WROVER-E module's PCB antenna at the board edge and follow Espressif's antenna keepout; do not add a chip antenna or external antenna unless switching to an external-antenna ESP32 module.
 5. Confirm the TPS63020 inductor current and thermal limits, transistor pinout, USB ESD SOT-666 footprint and pinout, jack-detect wiring, and ER-TFT020-7 FFC pinout, cable orientation, and mechanical mounting before ordering the custom PCB.
