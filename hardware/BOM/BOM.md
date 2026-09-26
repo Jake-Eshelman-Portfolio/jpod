@@ -30,7 +30,7 @@ The prototype and first hardware build share the ESP32-WROVER platform, TLV320DA
 | APT1608SGC | `N/A` | Green 1608 SMD charge-indicator LED; verify supply, footprint, LED polarity, current-limiting resistor, and charger status wiring before release. |
 | APT1608SYCK | `N/A` | Yellow 1608 SMD charge-indicator LED; verify supply, footprint, LED polarity, current-limiting resistor, and charger status wiring before release. |
 | TPS63020DSJT | `296-27230-1-ND` | This stocked buck-boost regulator holds the system rail at 3.3 V as the battery voltage rises and falls. |
-| XAL4020-152MEC | `2457-XAL4020-152MEC-ND` | This stocked 1.5 uH inductor replaces the unresolved XFL4020 part and stores energy for the TPS63020 converter; verify its current and temperature margin against the final power budget. |
+| SRP4020TA-1R5M | `SRP4020TA-1R5MCT-ND` | Stocked Bourns shielded 1.5 uH +/-20% inductor for the TPS63020; 7 A saturation, 4.5 A rated current, 42 milliohm max DCR. Its 4.45 x 4.06 x 2.00 mm body requires the Bourns land pattern for L1, not an assumed 4.0 x 4.0 mm footprint. Verify current and enclosure clearance before layout. [DigiKey product page](https://www.digikey.com/en/products/detail/bourns-inc/SRP4020TA-1R5M/4901003). |
 | MAX17048G+T10 | `MAX17048G+T10CT-ND` | This stocked optional fuel-gauge IC reports battery state of charge to the firmware over I2C. |
 | CP2102N-A02-GQFN24R | `336-5888-1-ND` | This stocked USB-to-UART bridge provides programming and serial debug, though its 31-week manufacturer lead time makes it a buy-early item. |
 | MMBT3904-7-F | `MMBT3904-FDICT-ND` | These stocked SOT-23 NPN transistors implement ESP32 automatic reset and boot-mode control; verify pin mapping in the schematic. |

@@ -9,7 +9,7 @@
 | APT1608SGC | `N/A` | Green 1608 SMD charge-indicator LED; add and verify symbol, footprint, polarity, and drive resistor. |
 | APT1608SYCK | `N/A` | Yellow 1608 SMD charge-indicator LED; add and verify symbol, footprint, polarity, and drive resistor. |
 | TPS63020DSJT | `296-27230-1-ND` | This stocked buck-boost regulator holds the system rail at 3.3 V as the battery voltage rises and falls. |
-| XAL4020-152MEC | `2457-XAL4020-152MEC-ND` | This stocked 1.5 uH inductor replaces the unresolved XFL4020 part and stores energy for the TPS63020 converter; verify its current and temperature margin against the final power budget. |
+| SRP4020TA-1R5M | `SRP4020TA-1R5MCT-ND` | Bourns shielded 1.5 uH inductor; assign its manufacturer land pattern to schematic L1 and verify clearance for its 4.45 x 4.06 x 2.00 mm body before layout. |
 | MAX17048G+T10 | `MAX17048G+T10CT-ND` | This stocked optional fuel-gauge IC reports battery state of charge to the firmware over I2C. |
 | CP2102N-A02-GQFN24R | `336-5888-1-ND` | This stocked USB-to-UART bridge provides programming and serial debug, though its 31-week manufacturer lead time makes it a buy-early item. |
 | MMBT3904-7-F | `MMBT3904-FDICT-ND` | These stocked SOT-23 NPN transistors implement ESP32 automatic reset and boot-mode control; verify pin mapping in the schematic. |
