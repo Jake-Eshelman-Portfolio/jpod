@@ -1,4 +1,9 @@
 {
+  "editor.inlayHints.enabled": "off",
+  "rust-analyzer.inlayHints.typeHints.enable": false,
+  "rust-analyzer.linkedProjects": [
+    "software/test_bench/Cargo.toml"
+  ],
   "files.exclude": {
     "software/test_bench/target": true,
     "software/test_bench/.embuild": true
