@@ -58,6 +58,10 @@ dkms.conf
 helper_scripts/*.csv
 __pycache__
 
+# Rust and ESP-IDF build output
+/software/test_bench/target/
+/software/test_bench/.embuild/
+
 # KiCad generated, personal, and backup files
 hardware/KiCAD/**/fp-info-cache
 hardware/KiCAD/**/fp-info-cache/**
