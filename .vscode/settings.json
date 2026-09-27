@@ -1,0 +1,6 @@
+{
+  "files.exclude": {
+    "software/test_bench/target": true,
+    "software/test_bench/.embuild": true
+  }
+}

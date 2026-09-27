@@ -17,6 +17,9 @@ jobs:
   rust-checks:
     name: Rust Checks
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/test_bench
     strategy:
       fail-fast: false
       matrix:
@@ -38,5 +41,7 @@ jobs:
           ldproxy: true
       - name: Enable caching
         uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: software/test_bench -> target
       - name: Run command
         run: cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
