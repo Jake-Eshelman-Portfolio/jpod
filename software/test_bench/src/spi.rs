@@ -1,6 +1,6 @@
 use esp_idf_svc::hal::{
     gpio::{Gpio18, Gpio19, Gpio23},
-    spi::{SpiDriver, SpiDriverConfig, SPI2},
+    spi::{Dma, SpiDriver, SpiDriverConfig, SPI2},
 };
 use esp_idf_svc::sys::EspError;
 
@@ -10,5 +10,12 @@ pub fn new_bus(
     mosi: Gpio23<'static>,
     miso: Gpio19<'static>,
 ) -> Result<SpiDriver<'static>, EspError> {
-    SpiDriver::new(spi, sck, mosi, Some(miso), &SpiDriverConfig::new())
+    // DMA is required by the SD card driver (512-byte sectors > 64-byte non-DMA limit).
+    SpiDriver::new(
+        spi,
+        sck,
+        mosi,
+        Some(miso),
+        &SpiDriverConfig::new().dma(Dma::Auto(4096)),
+    )
 }
