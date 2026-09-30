@@ -1980,7 +1980,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Transistor_BJT:SS8050"
+		(symbol "Transistor_BJT:MMBT3904"
 			(pin_names
 				(offset 0)
 				(hide yes)
@@ -2001,7 +2001,7 @@
 					(justify left)
 				)
 			)
-			(property "Value" "SS8050"
+			(property "Value" "MMBT3904"
 				(at 5.08 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2013,7 +2013,7 @@
 				)
 			)
 			(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-				(at 5.08 -7.366 0)
+				(at 5.08 -1.905 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -2025,8 +2025,8 @@
 					(justify left)
 				)
 			)
-			(property "Datasheet" "http://www.secosgmbh.com/datasheet/products/SSMPTransistor/SOT-23/SS8050.pdf"
-				(at 5.08 -4.826 0)
+			(property "Datasheet" "https://www.onsemi.com/pdf/datasheet/pzt3904-d.pdf"
+				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -2037,8 +2037,8 @@
 					(justify left)
 				)
 			)
-			(property "Description" "General Purpose NPN Transistor, 1.5A Ic, 25V Vce, SOT-23"
-				(at 34.036 -2.286 0)
+			(property "Description" "0.2A Ic, 40V Vce, Small Signal NPN Transistor, SOT-23"
+				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -2070,7 +2070,7 @@
 					)
 				)
 			)
-			(property "ki_keywords" "SS8050 NPN Transistor"
+			(property "ki_keywords" "NPN Transistor"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2092,7 +2092,7 @@
 					)
 				)
 			)
-			(symbol "SS8050_0_1"
+			(symbol "MMBT3904_0_1"
 				(polyline
 					(pts
 						(xy -2.54 0) (xy 0.635 0)
@@ -2129,7 +2129,7 @@
 					)
 				)
 			)
-			(symbol "SS8050_1_1"
+			(symbol "MMBT3904_1_1"
 				(polyline
 					(pts
 						(xy 0.635 0.635) (xy 2.54 2.54)
@@ -10177,6 +10177,17 @@
 		)
 		(uuid "3048f3a6-0e65-4789-a8c5-df9a919e2c0d")
 	)
+	(text "1: Emitter (Source)\n2: Base (Gate)\n3: Collector (Drain)"
+		(exclude_from_sim no)
+		(at 145.542 89.662 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "34b244a6-cecf-4070-8a3c-4c1ba83c9fe8")
+	)
 	(text "References from ESP TX to UART RX"
 		(exclude_from_sim no)
 		(at 36.576 114.3 0)
@@ -10389,6 +10400,12 @@
 		(uuid "229fde9f-04b8-47c1-b760-aa60724f5d1a")
 	)
 	(junction
+		(at 106.68 78.74)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "26740a72-7751-4a37-a92c-955520d6d326")
+	)
+	(junction
 		(at 279.4 52.959)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -10467,12 +10484,6 @@
 		(uuid "5c04944e-3d89-4c3a-bc7a-ffd4c3c77fe2")
 	)
 	(junction
-		(at 45.974 96.52)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "5eefa65b-44c5-4ede-828e-b8a9aa5f0a1b")
-	)
-	(junction
 		(at 322.58 146.05)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -10521,12 +10532,6 @@
 		(uuid "7c42b162-5dbd-48f3-ad36-2b50c8f6e311")
 	)
 	(junction
-		(at 91.694 76.2)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "7f5a520e-d741-48e0-aab0-94dcfdbd0662")
-	)
-	(junction
 		(at 67.056 245.11)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -10555,6 +10560,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "892791cf-da0c-49d9-9357-78d8924662e1")
+	)
+	(junction
+		(at 45.72 96.52)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "89c60d7f-7a11-4e3d-b456-2ae0176d3706")
 	)
 	(junction
 		(at 42.164 54.61)
@@ -10605,13 +10616,13 @@
 		(uuid "b0ff3a06-ce1f-4f8b-956d-e0e87cb31179")
 	)
 	(junction
-		(at 45.974 43.18)
+		(at 45.72 43.18)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "c11bc790-5c8d-4aea-aba1-bb95de4f2cf1")
 	)
 	(junction
-		(at 91.694 43.18)
+		(at 91.44 43.18)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "c1d53cbb-1674-4579-b806-0ed53e26b9cd")
@@ -10645,12 +10656,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "ce97413c-ff89-494a-bc50-2683f63eb79a")
-	)
-	(junction
-		(at 91.694 83.82)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "cff7ad7a-371d-437f-9e46-62bcf158120a")
 	)
 	(junction
 		(at 457.454 53.213)
@@ -10731,23 +10736,17 @@
 		(uuid "f636e9be-81e7-45ad-b486-e827eed9050e")
 	)
 	(junction
-		(at 106.68 78.74)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "f89d9c5d-ba49-4f62-84fb-b0ad3f6a1345")
-	)
-	(junction
 		(at 494.03 207.899)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "ff1cb6f6-4a06-4b94-864c-3efc56dcf12c")
 	)
 	(no_connect
-		(at 91.694 73.66)
+		(at 91.44 73.66)
 		(uuid "0316926e-139a-4cc8-b226-2f06a2614ecc")
 	)
 	(no_connect
-		(at 45.974 81.28)
+		(at 45.72 81.28)
 		(uuid "0403319d-a7a0-4f34-8f0b-d2dd0fc31b1d")
 	)
 	(no_connect
@@ -10759,19 +10758,19 @@
 		(uuid "0d636997-6dc0-440f-b9b5-6f4601eed70e")
 	)
 	(no_connect
-		(at 45.974 83.82)
+		(at 45.72 83.82)
 		(uuid "1f16a6b3-fc3d-47a2-957a-514a2ae5177d")
 	)
 	(no_connect
-		(at 45.974 71.12)
+		(at 45.72 71.12)
 		(uuid "297522c7-2ade-4a40-916b-0f25b56e3af3")
 	)
 	(no_connect
-		(at 45.974 66.04)
+		(at 45.72 66.04)
 		(uuid "34af3ffd-52cb-46c0-9610-88292941be6e")
 	)
 	(no_connect
-		(at 45.974 86.36)
+		(at 45.72 86.36)
 		(uuid "4f627c97-e356-4744-afa0-1ab82baff395")
 	)
 	(no_connect
@@ -10795,7 +10794,7 @@
 		(uuid "9ec00a2b-72d5-4e02-bef1-2a957b1ef452")
 	)
 	(no_connect
-		(at 45.974 78.74)
+		(at 45.72 78.74)
 		(uuid "9f24c4f7-c2b0-4ce3-aa2c-3c81b1b9e481")
 	)
 	(no_connect
@@ -10807,7 +10806,7 @@
 		(uuid "ab34c780-dc6e-4067-a414-c2f5884f4e5c")
 	)
 	(no_connect
-		(at 45.974 73.66)
+		(at 45.72 73.66)
 		(uuid "b964e420-35c6-4622-8569-b58eade69e2b")
 	)
 	(no_connect
@@ -10819,11 +10818,11 @@
 		(uuid "bff3fb31-4f86-4d2f-b707-f7cca40369e5")
 	)
 	(no_connect
-		(at 91.694 78.74)
+		(at 91.44 78.74)
 		(uuid "cac194ad-a042-4ce7-bf51-4ca823023387")
 	)
 	(no_connect
-		(at 91.694 81.28)
+		(at 91.44 81.28)
 		(uuid "cd37514e-50c0-4a0a-ae91-3151ae71ff04")
 	)
 	(no_connect
@@ -10857,16 +10856,6 @@
 			(type default)
 		)
 		(uuid "0555dc60-5169-456c-b9f3-b4b375368da8")
-	)
-	(wire
-		(pts
-			(xy 45.974 93.98) (xy 45.974 96.52)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "05735e18-f693-420b-86fe-088b56902d56")
 	)
 	(wire
 		(pts
@@ -11000,7 +10989,7 @@
 	)
 	(wire
 		(pts
-			(xy 42.164 43.18) (xy 45.974 43.18)
+			(xy 42.164 43.18) (xy 100.584 43.18)
 		)
 		(stroke
 			(width 0)
@@ -11057,6 +11046,16 @@
 			(type default)
 		)
 		(uuid "1f9b9ac7-f1fb-40d0-81ba-72cfcc98fa55")
+	)
+	(wire
+		(pts
+			(xy 91.44 76.2) (xy 100.33 76.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1fcdd971-3ab7-4efd-b836-998f92fd3b72")
 	)
 	(wire
 		(pts
@@ -11177,16 +11176,6 @@
 			(type default)
 		)
 		(uuid "3de36baa-888b-476c-a8fc-3eda1753a554")
-	)
-	(wire
-		(pts
-			(xy 91.694 83.82) (xy 102.87 83.82)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3edf8d78-cc87-4d1f-951c-2bfccfaa64c9")
 	)
 	(wire
 		(pts
@@ -11380,6 +11369,16 @@
 	)
 	(wire
 		(pts
+			(xy 91.44 83.82) (xy 102.87 83.82)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "57b3ab07-d447-4500-8590-b6878c1b4a20")
+	)
+	(wire
+		(pts
 			(xy 283.972 32.639) (xy 279.4 32.639)
 		)
 		(stroke
@@ -11440,6 +11439,16 @@
 	)
 	(wire
 		(pts
+			(xy 45.72 93.98) (xy 45.72 96.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "60fbc1cc-b2b5-432c-931b-68b29c8f64f1")
+	)
+	(wire
+		(pts
 			(xy 42.164 60.96) (xy 42.164 62.23)
 		)
 		(stroke
@@ -11480,7 +11489,7 @@
 	)
 	(wire
 		(pts
-			(xy 45.974 55.88) (xy 42.164 55.88)
+			(xy 45.72 55.88) (xy 42.164 55.88)
 		)
 		(stroke
 			(width 0)
@@ -11510,7 +11519,7 @@
 	)
 	(wire
 		(pts
-			(xy 91.694 43.18) (xy 91.694 58.42)
+			(xy 91.44 43.18) (xy 91.44 58.42)
 		)
 		(stroke
 			(width 0)
@@ -11630,16 +11639,6 @@
 	)
 	(wire
 		(pts
-			(xy 99.06 78.74) (xy 106.68 78.74)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7bee4eeb-74c6-4ec4-8495-0e6c8ab2c905")
-	)
-	(wire
-		(pts
 			(xy 293.878 45.339) (xy 290.957 45.339)
 		)
 		(stroke
@@ -11667,16 +11666,6 @@
 			(type default)
 		)
 		(uuid "7f30aa83-44f9-4743-93ea-14b21233acfc")
-	)
-	(wire
-		(pts
-			(xy 91.44 83.82) (xy 91.694 83.82)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7f3a7bd8-7c3d-465c-a658-d7d080b21456")
 	)
 	(wire
 		(pts
@@ -11747,16 +11736,6 @@
 			(type default)
 		)
 		(uuid "86b62ccb-63e3-4026-8de2-f8715f053fce")
-	)
-	(wire
-		(pts
-			(xy 91.694 76.2) (xy 99.06 76.2)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "88656db2-aa36-4765-8c93-c8b53f402e9c")
 	)
 	(wire
 		(pts
@@ -11857,26 +11836,6 @@
 			(type default)
 		)
 		(uuid "93d73af3-2432-41f3-ae65-25fd8e96456f")
-	)
-	(wire
-		(pts
-			(xy 91.44 76.2) (xy 91.694 76.2)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "948087dd-8316-414f-9354-f1bf254533fb")
-	)
-	(wire
-		(pts
-			(xy 99.06 76.2) (xy 99.06 78.74)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "94dd2c6b-0593-4720-8406-9264d722faf2")
 	)
 	(wire
 		(pts
@@ -12020,7 +11979,7 @@
 	)
 	(wire
 		(pts
-			(xy 45.974 43.18) (xy 45.974 53.34)
+			(xy 45.72 43.18) (xy 45.72 53.34)
 		)
 		(stroke
 			(width 0)
@@ -12430,7 +12389,7 @@
 	)
 	(wire
 		(pts
-			(xy 105.664 63.5) (xy 91.694 63.5)
+			(xy 105.664 63.5) (xy 91.44 63.5)
 		)
 		(stroke
 			(width 0)
@@ -12640,6 +12599,16 @@
 	)
 	(wire
 		(pts
+			(xy 100.33 78.74) (xy 106.68 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e4643a5d-1dcb-4d19-b8c2-600cee409c7b")
+	)
+	(wire
+		(pts
 			(xy 106.68 78.74) (xy 110.49 78.74)
 		)
 		(stroke
@@ -12760,16 +12729,6 @@
 	)
 	(wire
 		(pts
-			(xy 45.974 43.18) (xy 91.694 43.18)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "eee2f124-b5f5-4d8f-8c6a-79adbc6f5b6e")
-	)
-	(wire
-		(pts
 			(xy 486.41 297.18) (xy 486.41 299.72)
 		)
 		(stroke
@@ -12810,16 +12769,6 @@
 	)
 	(wire
 		(pts
-			(xy 100.584 43.18) (xy 91.694 43.18)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f35019aa-6f39-433d-826a-b4b31b264120")
-	)
-	(wire
-		(pts
 			(xy 485.394 229.489) (xy 485.394 230.886)
 		)
 		(stroke
@@ -12827,6 +12776,16 @@
 			(type default)
 		)
 		(uuid "f3f85a7e-0223-4838-a22b-bd94939ce4b1")
+	)
+	(wire
+		(pts
+			(xy 100.33 76.2) (xy 100.33 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f3fb0bc2-78b4-4d6a-b753-f3da7f7cb988")
 	)
 	(wire
 		(pts
@@ -12860,7 +12819,7 @@
 	)
 	(wire
 		(pts
-			(xy 45.974 60.96) (xy 42.164 60.96)
+			(xy 45.72 60.96) (xy 42.164 60.96)
 		)
 		(stroke
 			(width 0)
@@ -13049,7 +13008,7 @@
 		(uuid "1cf18d1c-19dd-4a40-9198-8d59c31b5056")
 	)
 	(label "ESP_TXD0"
-		(at 91.694 88.9 0)
+		(at 91.44 88.9 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -13219,7 +13178,7 @@
 		(uuid "3dc4fcbf-0158-4e1d-8c78-f73404010ace")
 	)
 	(label "I{slash}01"
-		(at 91.694 66.04 0)
+		(at 91.44 66.04 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -13409,7 +13368,7 @@
 		(uuid "6af40205-c465-4e83-be66-25c2bb2a14c0")
 	)
 	(label "ESP_RXD0"
-		(at 91.694 91.44 0)
+		(at 91.44 91.44 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -13779,7 +13738,7 @@
 		(uuid "b97b4d46-7b89-4553-9797-560b34eb7847")
 	)
 	(label "I{slash}02"
-		(at 91.694 68.58 0)
+		(at 91.44 68.58 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -16265,7 +16224,7 @@
 	(symbol
 		(lib_name "GND_1")
 		(lib_id "power:GND")
-		(at 45.974 96.52 0)
+		(at 45.72 96.52 0)
 		(mirror y)
 		(unit 1)
 		(body_style 1)
@@ -16277,7 +16236,7 @@
 		(fields_autoplaced yes)
 		(uuid "1ea073cc-c5b5-4bfc-b8f1-3436004fd365")
 		(property "Reference" "#PWR0106"
-			(at 45.974 102.87 0)
+			(at 45.72 102.87 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -16288,7 +16247,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 45.974 101.6 0)
+			(at 45.72 101.6 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -16298,7 +16257,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 45.974 96.52 0)
+			(at 45.72 96.52 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -16309,7 +16268,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 45.974 96.52 0)
+			(at 45.72 96.52 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -16320,7 +16279,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 45.974 96.52 0)
+			(at 45.72 96.52 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17539,115 +17498,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Transistor_BJT:SS8050")
-		(at 128.27 78.74 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "361bc331-b8a0-4560-aebc-99c566351123")
-		(property "Reference" "Q2"
-			(at 133.35 77.4699 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "SS8050"
-			(at 133.35 80.0099 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 133.35 86.106 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-			)
-		)
-		(property "Datasheet" "http://www.secosgmbh.com/datasheet/products/SSMPTransistor/SOT-23/SS8050.pdf"
-			(at 133.35 83.566 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Description" "General Purpose NPN Transistor, 1.5A Ic, 25V Vce, SOT-23"
-			(at 162.306 81.026 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Sim.Device" "NPN"
-			(at 128.27 78.74 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Sim.Pins" "1=B 2=E 3=C"
-			(at 128.27 78.74 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "b66b811b-a65b-4cf2-8a45-726529d3e107")
-		)
-		(pin "3"
-			(uuid "bdc74c0c-6181-4efb-861b-580dbdc11274")
-		)
-		(pin "2"
-			(uuid "e0d4fd63-32a8-46da-8f45-f8e38051e1b7")
-		)
-		(instances
-			(project "jpod-v1.0"
-				(path "/6f39d746-fc34-453f-ad9d-f86b2a09a03d"
-					(reference "Q2")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "jpod:USBLC6-2P6")
 		(at 103.505 119.38 0)
 		(unit 1)
@@ -18266,6 +18116,116 @@
 			(project "jpod-v1.0"
 				(path "/6f39d746-fc34-453f-ad9d-f86b2a09a03d"
 					(reference "U5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_BJT:MMBT3904")
+		(at 128.27 99.06 0)
+		(mirror x)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "40b94fde-0ed4-4daf-befd-1c20513d0e88")
+		(property "Reference" "Q5"
+			(at 133.35 100.3301 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "MMBT3904"
+			(at 133.35 97.7901 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 133.35 97.155 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pdf/datasheet/pzt3904-d.pdf"
+			(at 128.27 99.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "0.2A Ic, 40V Vce, Small Signal NPN Transistor, SOT-23"
+			(at 128.27 99.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Device" "NPN"
+			(at 128.27 99.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Pins" "1=B 2=E 3=C"
+			(at 128.27 99.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "3"
+			(uuid "8c02ee12-36e5-4b35-9c62-49cb2dc34503")
+		)
+		(pin "2"
+			(uuid "eb31e056-199e-4f8c-9817-477180b290d0")
+		)
+		(pin "1"
+			(uuid "74458441-a195-47f3-b170-fb3547924b79")
+		)
+		(instances
+			(project "jpod-v1.0"
+				(path "/6f39d746-fc34-453f-ad9d-f86b2a09a03d"
+					(reference "Q5")
 					(unit 1)
 				)
 			)
@@ -20937,116 +20897,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Transistor_BJT:SS8050")
-		(at 128.27 99.06 0)
-		(mirror x)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "6ceab6bd-11e7-4097-aa64-f667478f24f4")
-		(property "Reference" "Q3"
-			(at 133.35 100.3301 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "SS8050"
-			(at 133.35 97.7901 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 133.35 91.694 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-			)
-		)
-		(property "Datasheet" "http://www.secosgmbh.com/datasheet/products/SSMPTransistor/SOT-23/SS8050.pdf"
-			(at 133.35 94.234 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Description" "General Purpose NPN Transistor, 1.5A Ic, 25V Vce, SOT-23"
-			(at 162.306 96.774 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Sim.Device" "NPN"
-			(at 128.27 99.06 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Sim.Pins" "1=B 2=E 3=C"
-			(at 128.27 99.06 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "ef1c5921-6478-4876-a0d5-dc9091b2dd21")
-		)
-		(pin "3"
-			(uuid "a6af8b69-c9be-46b7-8901-a45a1cddf117")
-		)
-		(pin "2"
-			(uuid "391906b9-5f65-431c-8fa7-361d56acdfbe")
-		)
-		(instances
-			(project "jpod-v1.0"
-				(path "/6f39d746-fc34-453f-ad9d-f86b2a09a03d"
-					(reference "Q3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 59.436 237.617 0)
 		(unit 1)
@@ -23181,7 +23031,7 @@
 	)
 	(symbol
 		(lib_id "jpod:CP2102N-A02-GQFN24R")
-		(at 68.834 73.66 0)
+		(at 68.58 73.66 0)
 		(mirror y)
 		(unit 1)
 		(body_style 1)
@@ -23193,7 +23043,7 @@
 		(fields_autoplaced yes)
 		(uuid "9883fb9a-3863-4ae9-a2cf-12a721729bbd")
 		(property "Reference" "U7"
-			(at 68.834 45.72 0)
+			(at 68.58 45.72 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -23203,7 +23053,7 @@
 			)
 		)
 		(property "Value" "UART_Bridge"
-			(at 68.834 48.26 0)
+			(at 68.58 48.26 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -23213,7 +23063,7 @@
 			)
 		)
 		(property "Footprint" "jpod:CP2102N-A02-GQFN24R"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23225,7 +23075,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23236,7 +23086,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23247,7 +23097,7 @@
 			)
 		)
 		(property "SNAPEDA_PACKAGE_ID" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23259,7 +23109,7 @@
 			)
 		)
 		(property "B_NOM" "0.24"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23271,7 +23121,7 @@
 			)
 		)
 		(property "EMAX" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23283,7 +23133,7 @@
 			)
 		)
 		(property "VACANCIES" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23295,7 +23145,7 @@
 			)
 		)
 		(property "BALL_COLUMNS" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23307,7 +23157,7 @@
 			)
 		)
 		(property "A_MAX" "0.8"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23319,7 +23169,7 @@
 			)
 		)
 		(property "BODY_DIAMETER" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23331,7 +23181,7 @@
 			)
 		)
 		(property "THERMAL_PAD" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23343,7 +23193,7 @@
 			)
 		)
 		(property "B_MIN" "0.18"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23355,7 +23205,7 @@
 			)
 		)
 		(property "B_MAX" "0.3"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23367,7 +23217,7 @@
 			)
 		)
 		(property "EMIN" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23379,7 +23229,7 @@
 			)
 		)
 		(property "JEDEC" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23391,7 +23241,7 @@
 			)
 		)
 		(property "ENOM" "0.5"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23403,7 +23253,7 @@
 			)
 		)
 		(property "D_NOM" "4.0"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23415,7 +23265,7 @@
 			)
 		)
 		(property "D_MAX" "4.0"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23427,7 +23277,7 @@
 			)
 		)
 		(property "L_MAX" "0.5"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23439,7 +23289,7 @@
 			)
 		)
 		(property "PACKAGE_TYPE" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23451,7 +23301,7 @@
 			)
 		)
 		(property "E2_NOM" "2.45"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23463,7 +23313,7 @@
 			)
 		)
 		(property "STANDARD" "IPC 7351B"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23475,7 +23325,7 @@
 			)
 		)
 		(property "PARTREV" "1.3"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23487,7 +23337,7 @@
 			)
 		)
 		(property "DNOM" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23499,7 +23349,7 @@
 			)
 		)
 		(property "DMIN" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23511,7 +23361,7 @@
 			)
 		)
 		(property "E_NOM" "4.0"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23523,7 +23373,7 @@
 			)
 		)
 		(property "BALL_ROWS" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23535,7 +23385,7 @@
 			)
 		)
 		(property "DMAX" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23547,7 +23397,7 @@
 			)
 		)
 		(property "D2_NOM" "2.45"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23559,7 +23409,7 @@
 			)
 		)
 		(property "L_NOM" "0.4"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23571,7 +23421,7 @@
 			)
 		)
 		(property "MANUFACTURER" "Silicon Labs"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23583,7 +23433,7 @@
 			)
 		)
 		(property "IPC" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23595,7 +23445,7 @@
 			)
 		)
 		(property "PIN_COLUMNS" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23607,7 +23457,7 @@
 			)
 		)
 		(property "PIN_COUNT_E" "6.0"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23619,7 +23469,7 @@
 			)
 		)
 		(property "PIN_COUNT_D" "6.0"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23631,7 +23481,7 @@
 			)
 		)
 		(property "E_MIN" "4.0"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23643,7 +23493,7 @@
 			)
 		)
 		(property "D_MIN" "4.0"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23655,7 +23505,7 @@
 			)
 		)
 		(property "PINS" ""
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23667,7 +23517,7 @@
 			)
 		)
 		(property "L_MIN" "0.3"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23679,7 +23529,7 @@
 			)
 		)
 		(property "E_MAX" "4.0"
-			(at 68.834 73.66 0)
+			(at 68.58 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -23771,7 +23621,7 @@
 	(symbol
 		(lib_id "Device:R")
 		(at 38.354 58.42 0)
-		(mirror y)
+		(mirror x)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -23782,29 +23632,29 @@
 		(fields_autoplaced yes)
 		(uuid "98e46769-18a2-4b55-9e26-ab1f3bcf8fdc")
 		(property "Reference" "R28"
-			(at 35.814 57.1499 0)
+			(at 35.56 57.1499 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "1K"
-			(at 35.814 59.6899 0)
+		(property "Value" "2K"
+			(at 35.56 59.6899 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 40.132 58.42 90)
+			(at 36.576 58.42 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -28594,6 +28444,116 @@
 		)
 	)
 	(symbol
+		(lib_id "Transistor_BJT:MMBT3904")
+		(at 128.27 78.74 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "df728987-fea0-4330-a58c-5531a9b6b668")
+		(property "Reference" "Q4"
+			(at 133.35 77.4699 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "MMBT3904"
+			(at 133.35 80.0099 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 133.35 80.645 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pdf/datasheet/pzt3904-d.pdf"
+			(at 128.27 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "0.2A Ic, 40V Vce, Small Signal NPN Transistor, SOT-23"
+			(at 128.27 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Device" "NPN"
+			(at 128.27 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sim.Pins" "1=B 2=E 3=C"
+			(at 128.27 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "3"
+			(uuid "170a57a9-2fda-4aac-bc41-8009c737e935")
+		)
+		(pin "2"
+			(uuid "92757cca-e12b-406b-8bce-48037d461a7f")
+		)
+		(pin "1"
+			(uuid "fbaee44a-1765-4470-85b2-f37f171bf2c8")
+		)
+		(instances
+			(project "jpod-v1.0"
+				(path "/6f39d746-fc34-453f-ad9d-f86b2a09a03d"
+					(reference "Q4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 104.013 254.127 0)
 		(unit 1)
@@ -29394,7 +29354,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 123.444 57.15 0)
+			(at 123.444 57.912 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
