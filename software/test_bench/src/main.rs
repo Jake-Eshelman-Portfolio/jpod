@@ -1,5 +1,6 @@
 pub mod pins;
 mod screen;
+mod sd;
 pub mod spi;
 
 use esp_idf_svc::hal::delay::FreeRtos;
@@ -47,10 +48,15 @@ fn main() {
         lcd_cs,
         lcd_dc,
         lcd_bl,
+        sd_cs,
         ..
     } = pins;
 
     let bus = spi::new_bus(spi2, spi_sck, spi_mosi, spi_miso).expect("SPI bus setup failed");
+    if let Err(error) = sd::run(&bus, sd_cs) {
+        log::error!("sd: FAILED: {error:?}");
+    }
+
     let mut screen =
         init_screen(&bus, lcd_cs, lcd_dc, lcd_bl).expect("Screen setup failed");
     screen.draw_rows();
