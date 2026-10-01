@@ -77,3 +77,6 @@ hardware/KiCAD/**/*.kicad_pro-bak
 hardware/KiCAD/**/*.kicad_sch-bak
 hardware/KiCAD/**/*.kicad_pcb-bak
 hardware/KiCAD/**/*~
+
+mp3_samples/*.mp3
+mp3_samples/**/*.mp3

@@ -1,3 +1,5 @@
+# Note: lsblk -o NAME,PATH,TRAN,RM,SIZE,MODEL,TYPE,FSTYPE,MOUNTPOINTS to check your partition first!
+
 param([switch]$Setup, [switch]$Elevated, [switch]$List, [string]$InstanceId)
 
 $ErrorActionPreference = 'Stop'

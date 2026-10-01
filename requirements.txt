@@ -1,2 +1,11 @@
+# Python packages (install with: python -m pip install -r requirements.txt)
 python-dotenv
 requests
+
+# Linux/WSL tools for helper_scripts/partition_sd_card.sh (run once):
+#   sudo apt update
+#   sudo apt install -y util-linux fdisk parted dosfstools udev coreutils findutils gawk
+#
+# Optional: install FFmpeg to generate an MP3 test tone:
+#   sudo apt install -y ffmpeg
+#   ffmpeg -f lavfi -i "sine=frequency=440:duration=5" -codec:a libmp3lame -b:a 128k mp3_samples/tone_440hz.mp3
