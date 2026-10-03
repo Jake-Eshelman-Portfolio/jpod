@@ -51,28 +51,25 @@ fn main() {
         lcd_dc,
         lcd_bl,
         sd_cs,
+        btn_up,
+        btn_down,
+        btn_left,
+        btn_right,
         btn_sel,
         ..
     } = pins;
 
     let bus = spi::new_bus(spi2, spi_sck, spi_mosi, spi_miso).expect("SPI bus setup failed");
     let sd_filesystem = sd::init(&bus, sd_cs).expect("SD init failed");
-
-    let sel_result = buttons::button(btn_sel);
-    let button = match sel_result {
-        Ok(button) => button,
-        Err(error) => {
-            log::error!("Select button setup failed: {error}");
-            return;
-        }
-    };
+    let buttons = buttons::init_buttons(btn_up, btn_down, btn_left, btn_right, btn_sel)
+        .expect("Button setup failed");
 
     let mut screen_instance = init_screen(&bus, lcd_cs, lcd_dc, lcd_bl).expect("Screen setup failed");
     screen_instance.write_songnames(sd_filesystem.songs());
 
     loop {
-        FreeRtos::delay_ms(1000);
-        if buttons::is_pressed(&button) {
+        FreeRtos::delay_ms(200);
+        if buttons::is_pressed(&buttons, buttons::Button::Select) {
             screen_instance.clear_status();
             screen_instance.draw_status(screen::ScreenStatus::ButtonPressed);
             
