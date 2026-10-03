@@ -69,7 +69,7 @@ fn main() {
 
     loop {
         FreeRtos::delay_ms(200);
-        if buttons::is_pressed(&buttons, buttons::Button::Select) {
+        if buttons::is_pressed(&buttons.select) {
             screen_instance.clear_status();
             screen_instance.draw_status(screen::ScreenStatus::ButtonPressed);
             
