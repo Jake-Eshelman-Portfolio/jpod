@@ -1,3 +1,10 @@
+use std::{
+    num::NonZeroUsize,
+    ops::ControlFlow,
+    thread::{Scope, ScopedJoinHandle},
+};
+
+use crate::active_object::{ActiveObject, Mailbox};
 use display_interface_spi::SPIInterfaceNoCS;
 use embedded_graphics::{
     mono_font::{ascii::FONT_10X20, MonoTextStyle},
@@ -24,30 +31,38 @@ type St7789Display<'spi> = Display<
     PinDriver<'spi, Output>,
 >;
 
+pub type ScreenWorker<'scope> = ScopedJoinHandle<'scope, Result<(), EspError>>;
+
 // The display borrows the SPI bus, so the screen cannot outlive that bus.
-pub struct Screen<'spi> {
-    pub display: St7789Display<'spi>,
-    pub backlight: PinDriver<'spi, Output>,
-    pub width: u32,
-    pub height: u32,
+struct Screen<'spi> {
+    display: St7789Display<'spi>,
+    backlight: PinDriver<'spi, Output>,
+    width: u32,
+    height: u32,
 }
 
+#[derive(Debug)]
+pub enum ScreenMessage {
+    ShowSongs(Vec<String>),
+    SetStatus(ScreenStatus),
+}
+
+#[derive(Debug)]
 pub enum ScreenStatus {
     ButtonPressed,
     ButtonUnpressed,
-    ButtonFailed
+    ButtonFailed,
 }
-
 
 // '_ is shorthand for matching lifetime of screen
 impl Screen<'_> {
     const LINE_SPACING: u32 = FONT_10X20.character_size.height;
-    pub const BOTTOM_CUTOFF: u32 = 40;
+    const BOTTOM_CUTOFF: u32 = 40;
     const STATUS_SEPARATOR_THICKNESS: u32 = 5;
     const STATUS_CLEAR_HEIGHT: u32 = Self::BOTTOM_CUTOFF - Self::STATUS_SEPARATOR_THICKNESS;
     const STATUS_BASELINE_OFFSET: i32 = 10;
 
-    pub fn clear_black(&mut self) {
+    fn clear_black(&mut self) {
         let bounds = Rectangle::new(Point::zero(), Size::new(self.width, self.height));
         bounds
             .into_styled(PrimitiveStyle::with_fill(Rgb565::BLACK))
@@ -55,7 +70,7 @@ impl Screen<'_> {
             .expect("ST7789 background draw failed");
     }
     // Todo: update this to be generic to void any text, now just status
-    pub fn clear_status(&mut self) {
+    fn clear_status(&mut self) {
         let status_height = self.height.min(Self::STATUS_CLEAR_HEIGHT);
         let bounds = Rectangle::new(
             Point::new(0, (self.height - status_height) as i32),
@@ -67,28 +82,35 @@ impl Screen<'_> {
             .expect("ST7789 status clear failed");
     }
 
-    pub fn draw_line(&mut self, y: i32) {
-        Line::new(
-            Point::new(0, y),
-            Point::new(self.width as i32 - 1, y),
-        )
-        .into_styled(PrimitiveStyle::with_stroke(Rgb565::WHITE, Self::STATUS_SEPARATOR_THICKNESS))
-        .draw(&mut self.display)
-        .expect("ST7789 line draw failed");
+    fn draw_line(&mut self, y: i32) {
+        Line::new(Point::new(0, y), Point::new(self.width as i32 - 1, y))
+            .into_styled(PrimitiveStyle::with_stroke(
+                Rgb565::WHITE,
+                Self::STATUS_SEPARATOR_THICKNESS,
+            ))
+            .draw(&mut self.display)
+            .expect("ST7789 line draw failed");
     }
 
-    pub fn write_songnames(&mut self, songs: &[crate::sd::Song]) {
+    fn write_songnames(&mut self, songs: &[String]) {
+        let song_area_height = self
+            .height
+            .saturating_sub(Self::BOTTOM_CUTOFF + Self::STATUS_SEPARATOR_THICKNESS);
+        Rectangle::new(Point::zero(), Size::new(self.width, song_area_height))
+            .into_styled(PrimitiveStyle::with_fill(Rgb565::BLACK))
+            .draw(&mut self.display)
+            .expect("ST7789 song list clear failed");
         let max_name_chars = (self.width / FONT_10X20.character_size.width) as usize;
 
         let style = MonoTextStyle::new(&FONT_10X20, Rgb565::WHITE);
         let mut baseline_y = Self::LINE_SPACING;
 
         for song in songs {
-            if baseline_y >= self.height {
+            if baseline_y >= song_area_height {
                 break;
             }
 
-            let display_name: String = song.name.chars().take(max_name_chars).collect();
+            let display_name: String = song.chars().take(max_name_chars).collect();
             Text::new(&display_name, Point::new(0, baseline_y as i32), style)
                 .draw(&mut self.display)
                 .expect("ST7789 text draw failed");
@@ -97,27 +119,70 @@ impl Screen<'_> {
         }
     }
 
-    pub fn draw_status(&mut self, status: ScreenStatus) {
+    fn draw_status(&mut self, status: ScreenStatus) {
         let style = MonoTextStyle::new(&FONT_10X20, Rgb565::WHITE);
         Text::new(
             unpack_screen_status(status),
             Point::new(0, self.height as i32 - Self::STATUS_BASELINE_OFFSET),
             style,
         )
-                .draw(&mut self.display)
-                .expect("ST7789 text draw failed");
+        .draw(&mut self.display)
+        .expect("ST7789 text draw failed");
+    }
+
+    fn handle_message(&mut self, message: ScreenMessage) -> ControlFlow<()> {
+        match message {
+            ScreenMessage::ShowSongs(songs) => self.write_songnames(&songs),
+            ScreenMessage::SetStatus(status) => {
+                self.clear_status();
+                self.draw_status(status);
+            }
+        }
+        ControlFlow::Continue(())
     }
 }
 
 fn unpack_screen_status(status: ScreenStatus) -> &'static str {
     match status {
-        ScreenStatus::ButtonPressed => "Button is pressed", 
+        ScreenStatus::ButtonPressed => "Button is pressed",
         ScreenStatus::ButtonUnpressed => "Button is unpressed",
         ScreenStatus::ButtonFailed => "Button process failed", // 0x0000144E + len (21/22)
     }
 }
 
-pub fn setup<'spi>(
+// Env must outlive scope, refers to pins and bus
+pub fn spawn_screen_worker<'scope, 'env: 'scope>(
+    scope: &'scope Scope<'scope, 'env>,
+    mailbox: Mailbox<ScreenMessage>,
+    bus: &'env SpiDriver<'env>,
+    cs: Gpio5<'env>,
+    dc: Gpio27<'env>,
+    bl: Gpio4<'env>,
+) -> ScreenWorker<'scope> {
+    ActiveObject::new("screen", NonZeroUsize::new(8 * 1024).unwrap())
+        .spawn_scoped(
+            scope,
+            mailbox,
+            move || initialize_screen(bus, cs, dc, bl),
+            Screen::handle_message,
+        )
+        .expect("Failed to start screen worker")
+}
+
+fn initialize_screen<'spi>(
+    bus: &'spi SpiDriver<'spi>,
+    cs: Gpio5<'spi>,
+    dc: Gpio27<'spi>,
+    bl: Gpio4<'spi>,
+) -> Result<Screen<'spi>, EspError> {
+    let mut screen = setup(bus, cs, dc, bl)?;
+    screen.clear_black();
+    screen.backlight.set_high()?;
+    screen.draw_line(screen.height as i32 - Screen::BOTTOM_CUTOFF as i32);
+    Ok(screen)
+}
+
+fn setup<'spi>(
     bus: &'spi SpiDriver<'spi>,
     cs: Gpio5<'spi>,
     dc: Gpio27<'spi>,

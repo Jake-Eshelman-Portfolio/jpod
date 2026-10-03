@@ -2,9 +2,16 @@ use std::{
     error::Error,
     fmt, fs,
     io::{Read, Write},
+    num::NonZeroUsize,
+    ops::ControlFlow,
     path::{Path, PathBuf},
+    thread::{Scope, ScopedJoinHandle},
 };
 
+use crate::{
+    active_object::{ActiveObject, Address, Mailbox},
+    screen::ScreenMessage,
+};
 use esp_idf_svc::{
     fs::fatfs::Fatfs,
     hal::{
@@ -17,7 +24,7 @@ use esp_idf_svc::{
 };
 use log::info;
 
-const MOUNT: &str = "/sdcard"; 
+const MOUNT: &str = "/sdcard";
 pub const MP3_DIR: &str = "/sdcard/mp3_samples/";
 const TEST_FILE: &str = "/sdcard/JPODTEST.TXT";
 const TEST_DATA: &[u8] = b"jpod sd card test";
@@ -61,7 +68,13 @@ impl Error for SdError {
     }
 }
 
-pub struct SdFilesystem<MountGuard> {
+pub type SdWorker<'scope> = ScopedJoinHandle<'scope, Result<(), SdError>>;
+
+pub enum SdMessage {
+    ShowSongs(Address<ScreenMessage>),
+}
+
+struct SdFilesystem<MountGuard> {
     _mount: MountGuard,
     songs: Vec<Song>,
 }
@@ -76,12 +89,40 @@ impl<MountGuard> SdFilesystem<MountGuard> {
         list_directory(directory.as_ref())
     }
 
-    pub fn songs(&self) -> &[Song] {
-        &self.songs
+    fn handle_message(&mut self, message: SdMessage) -> ControlFlow<()> {
+        match message {
+            SdMessage::ShowSongs(screen_address) => {
+                let song_names = self.songs.iter().map(|song| song.name.clone()).collect();
+                if screen_address
+                    .post(ScreenMessage::ShowSongs(song_names))
+                    .is_err()
+                {
+                    log::error!("sd: screen worker disconnected");
+                    return ControlFlow::Break(());
+                }
+            }
+        }
+        ControlFlow::Continue(())
     }
 }
 
-pub fn init<'spi>(
+pub fn spawn_sd_worker<'scope, 'env: 'scope>(
+    scope: &'scope Scope<'scope, 'env>,
+    mailbox: Mailbox<SdMessage>,
+    bus: &'env SpiDriver<'env>,
+    cs: Gpio13<'env>,
+) -> SdWorker<'scope> {
+    ActiveObject::new("sd", NonZeroUsize::new(8 * 1024).unwrap())
+        .spawn_scoped(
+            scope,
+            mailbox,
+            move || initialize_sd(bus, cs),
+            SdFilesystem::handle_message,
+        )
+        .expect("Failed to start SD worker")
+}
+
+fn initialize_sd<'spi>(
     bus: &'spi SpiDriver<'spi>,
     cs: Gpio13<'spi>,
 ) -> Result<SdFilesystem<impl Sized + 'spi>, SdError> {
