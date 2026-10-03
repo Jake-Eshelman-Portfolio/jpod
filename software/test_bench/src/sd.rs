@@ -1,7 +1,8 @@
 use std::{
     error::Error,
-    fs,
+    fmt, fs,
     io::{Read, Write},
+    path::{Path, PathBuf},
 };
 
 use esp_idf_svc::{
@@ -12,14 +13,78 @@ use esp_idf_svc::{
         spi::SpiDriver,
     },
     io::vfs::MountedFatfs,
+    sys::EspError,
 };
 use log::info;
 
-const MOUNT: &str = "/sdcard";
+const MOUNT: &str = "/sdcard"; 
+pub const MP3_DIR: &str = "/sdcard/mp3_samples/";
 const TEST_FILE: &str = "/sdcard/JPODTEST.TXT";
 const TEST_DATA: &[u8] = b"jpod sd card test";
 
-pub fn run(bus: &SpiDriver<'static>, cs: Gpio13<'static>) -> Result<(), Box<dyn Error>> {
+#[derive(Debug)]
+pub enum SdError {
+    Esp(EspError),
+    Io(std::io::Error),
+    ReadBackMismatch,
+}
+
+impl From<EspError> for SdError {
+    fn from(error: EspError) -> Self {
+        Self::Esp(error)
+    }
+}
+
+impl From<std::io::Error> for SdError {
+    fn from(error: std::io::Error) -> Self {
+        Self::Io(error)
+    }
+}
+
+impl fmt::Display for SdError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Esp(error) => write!(formatter, "ESP-IDF error: {error}"),
+            Self::Io(error) => write!(formatter, "filesystem error: {error}"),
+            Self::ReadBackMismatch => write!(formatter, "SD read-back mismatch"),
+        }
+    }
+}
+
+impl Error for SdError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Esp(error) => Some(error),
+            Self::Io(error) => Some(error),
+            Self::ReadBackMismatch => None,
+        }
+    }
+}
+
+pub struct SdFilesystem<MountGuard> {
+    _mount: MountGuard,
+    songs: Vec<Song>,
+}
+
+pub struct Song {
+    pub path: PathBuf,
+    pub name: String,
+}
+
+impl<MountGuard> SdFilesystem<MountGuard> {
+    pub fn list_files_recursive(&self, directory: impl AsRef<Path>) -> Result<(), SdError> {
+        list_directory(directory.as_ref())
+    }
+
+    pub fn songs(&self) -> &[Song] {
+        &self.songs
+    }
+}
+
+pub fn init<'spi>(
+    bus: &'spi SpiDriver<'spi>,
+    cs: Gpio13<'spi>,
+) -> Result<SdFilesystem<impl Sized + 'spi>, SdError> {
     let host = SdSpiHostDriver::new(
         bus,
         Some(cs),
@@ -29,21 +94,71 @@ pub fn run(bus: &SpiDriver<'static>, cs: Gpio13<'static>) -> Result<(), Box<dyn 
         None,
     )?;
     let card = SdCardDriver::new_spi(host, &SdCardConfiguration::new())?;
-    let _fs = MountedFatfs::mount(Fatfs::new_sdcard(0, card)?, MOUNT, 4)?;
+    let mounted_fs = MountedFatfs::mount(Fatfs::new_sdcard(0, card)?, MOUNT, 4)?;
     info!("sd: mounted at {MOUNT}");
 
+    verify_file_operations()?;
+    let songs = collect_songs(MP3_DIR)?;
+    Ok(SdFilesystem {
+        _mount: mounted_fs,
+        songs,
+    })
+}
+
+fn collect_songs(directory: impl AsRef<Path>) -> Result<Vec<Song>, SdError> {
+    let mut songs = Vec::new();
+
+    for entry in fs::read_dir(directory)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if entry.file_type()?.is_file() && is_mp3(&path) {
+            let name = path
+                .file_stem()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned();
+            info!("sd: song path={path:?}, display name={name:?}");
+            songs.push(Song { path, name });
+        }
+    }
+
+    Ok(songs)
+}
+
+fn verify_file_operations() -> Result<(), SdError> {
     fs::File::create(TEST_FILE)?.write_all(TEST_DATA)?;
 
     let mut read_back = Vec::new();
     fs::File::open(TEST_FILE)?.read_to_end(&mut read_back)?;
     if read_back != TEST_DATA {
-        return Err("sd: read-back mismatch".into());
+        fs::remove_file(TEST_FILE)?;
+        return Err(SdError::ReadBackMismatch);
     }
-    info!("sd: write + read-back OK");
+    fs::remove_file(TEST_FILE)?;
+    info!("sd: write + read-back + delete OK");
 
-    for entry in fs::read_dir(MOUNT)? {
-        info!("sd:   {:?}", entry?.file_name());
+    Ok(())
+}
+
+fn list_directory(directory: &Path) -> Result<(), SdError> {
+    for entry in fs::read_dir(directory)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if entry.file_type()?.is_dir() {
+            list_directory(&path)?;
+        } else if entry.file_type()?.is_file() {
+            info!("sd:   {}", path.display());
+        }
     }
 
     Ok(())
+}
+
+fn is_mp3(path: &Path) -> bool {
+    match path.extension().and_then(|extension| extension.to_str()) {
+        Some(extension) => extension.eq_ignore_ascii_case("mp3"),
+        None => false,
+    }
 }

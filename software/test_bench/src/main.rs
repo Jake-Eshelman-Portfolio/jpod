@@ -1,6 +1,7 @@
 pub mod pins;
 mod screen;
-mod sd;
+mod buttons;
+pub(crate) mod sd;
 pub mod spi;
 
 use esp_idf_svc::hal::delay::FreeRtos;
@@ -35,6 +36,7 @@ fn init_screen<'a>(
     let mut screen = screen::setup(bus, cs, dc, bl)?;
     screen.clear_black();
     screen.backlight.set_high()?;
+    screen.draw_line(screen.height as i32 - screen::Screen::BOTTOM_CUTOFF as i32);
     Ok(screen)
 }
 
@@ -49,19 +51,34 @@ fn main() {
         lcd_dc,
         lcd_bl,
         sd_cs,
+        btn_sel,
         ..
     } = pins;
 
     let bus = spi::new_bus(spi2, spi_sck, spi_mosi, spi_miso).expect("SPI bus setup failed");
-    if let Err(error) = sd::run(&bus, sd_cs) {
-        log::error!("sd: FAILED: {error:?}");
-    }
+    let sd_filesystem = sd::init(&bus, sd_cs).expect("SD init failed");
 
-    let mut screen =
-        init_screen(&bus, lcd_cs, lcd_dc, lcd_bl).expect("Screen setup failed");
-    screen.draw_rows();
+    let sel_result = buttons::button(btn_sel);
+    let button = match sel_result {
+        Ok(button) => button,
+        Err(error) => {
+            log::error!("Select button setup failed: {error}");
+            return;
+        }
+    };
+
+    let mut screen_instance = init_screen(&bus, lcd_cs, lcd_dc, lcd_bl).expect("Screen setup failed");
+    screen_instance.write_songnames(sd_filesystem.songs());
 
     loop {
         FreeRtos::delay_ms(1000);
+        if buttons::is_pressed(&button) {
+            screen_instance.clear_status();
+            screen_instance.draw_status(screen::ScreenStatus::ButtonPressed);
+            
+        } else {
+            screen_instance.clear_status();
+            screen_instance.draw_status(screen::ScreenStatus::ButtonUnpressed);
+        }
     }
 }

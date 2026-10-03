@@ -11,10 +11,12 @@ Use a FAT16/FAT32 card. Long filenames are enabled with
 `CONFIG_FATFS_LFN_HEAP=y`. Build with `cargo build` from this directory;
 `cargo run` flashes the attached ESP32 and opens its serial monitor.
 
-The diagnostic mounts the card at `/sdcard`, creates or overwrites
-`/sdcard/JPODTEST.TXT`, verifies its contents, and lists the card root.
-Expected log: `sd: write + read-back OK`. A failure is logged and the
-display still starts. The FATFS mount is dropped when the diagnostic returns.
+`sd::init` mounts the card at `/sdcard`, creates or overwrites
+`/sdcard/JPODTEST.TXT`, verifies its contents, then deletes the test file.
+It returns the mount guard so the filesystem stays mounted. `main` calls the
+public `sd::list_files_recursive("/sdcard")` to log files in all directories.
+Expected log: `sd: write + read-back + delete OK`. SD errors are logged and
+the display still starts. The mount is released when the guard is dropped.
 
 The repository's SD preparation helper copies samples into `/mp3_samples`
 on the card; their mounted firmware path would be `/sdcard/mp3_samples`.
