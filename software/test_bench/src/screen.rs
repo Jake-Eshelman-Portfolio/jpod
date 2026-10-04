@@ -39,6 +39,7 @@ struct Screen<'spi> {
     backlight: PinDriver<'spi, Output>,
     width: u32,
     height: u32,
+    last_status: Option<ScreenStatus>,
 }
 
 #[derive(Debug)]
@@ -47,7 +48,7 @@ pub enum ScreenMessage {
     SetStatus(ScreenStatus),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScreenStatus {
     ButtonPressed,
     ButtonUnpressed,
@@ -134,8 +135,11 @@ impl Screen<'_> {
         match message {
             ScreenMessage::ShowSongs(songs) => self.write_songnames(&songs),
             ScreenMessage::SetStatus(status) => {
-                self.clear_status();
-                self.draw_status(status);
+                if self.last_status != Some(status) {
+                    self.clear_status();
+                    self.draw_status(status);
+                    self.last_status = Some(status);
+                }
             }
         }
         ControlFlow::Continue(())
@@ -208,5 +212,6 @@ fn setup<'spi>(
         backlight,
         width,
         height,
+        last_status: None,
     })
 }
