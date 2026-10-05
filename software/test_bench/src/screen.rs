@@ -16,12 +16,8 @@ use embedded_graphics::{
 use embedded_hal::spi::MODE_3;
 use esp_idf_svc::{
     hal::{
-        delay::Ets,
-        gpio::{Gpio27, Gpio4, Gpio5, Output, PinDriver},
-        spi::{SpiConfig, SpiDeviceDriver, SpiDriver},
-        units::FromValueType,
-    },
-    sys::EspError,
+        delay::{Ets, FreeRtos}, gpio::{Gpio4, Gpio5, Gpio27, Output, PinDriver}, spi::{SpiConfig, SpiDeviceDriver, SpiDriver}, units::FromValueType,
+    }, sys::EspError,
 };
 use mipidsi::{models::ST7789, Builder, Display};
 
@@ -70,12 +66,13 @@ impl Screen<'_> {
             .draw(&mut self.display)
             .expect("ST7789 background draw failed");
     }
-    // Todo: update this to be generic to void any text, now just status
-    fn clear_status(&mut self) {
-        let status_height = self.height.min(Self::STATUS_CLEAR_HEIGHT);
+    
+    fn clear_dimensions(&mut self, x: i32, y: i32, size_x: u32, size_y: u32) {
+        let starting_point = Point::new(x, y);
+        let rectangle_size = Size::new(size_x, size_y);
         let bounds = Rectangle::new(
-            Point::new(0, (self.height - status_height) as i32),
-            Size::new(self.width, status_height),
+            starting_point,
+            rectangle_size,
         );
         bounds
             .into_styled(PrimitiveStyle::with_fill(Rgb565::BLACK))
@@ -136,7 +133,7 @@ impl Screen<'_> {
             ScreenMessage::ShowSongs(songs) => self.write_songnames(&songs),
             ScreenMessage::SetStatus(status) => {
                 if self.last_status != Some(status) {
-                    self.clear_status();
+                    self.clear_dimensions(0, (self.height - Screen::STATUS_CLEAR_HEIGHT) as i32, self.width, Screen::STATUS_CLEAR_HEIGHT);
                     self.draw_status(status);
                     self.last_status = Some(status);
                 }
