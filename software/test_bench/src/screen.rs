@@ -46,9 +46,11 @@ pub enum ScreenMessage {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScreenStatus {
-    ButtonPressed,
-    ButtonUnpressed,
-    ButtonFailed,
+    UpPressed,
+    DownPressed,
+    LeftPressed,
+    RightPressed,
+    SelPressed,
 }
 
 // '_ is shorthand for matching lifetime of screen
@@ -145,9 +147,11 @@ impl Screen<'_> {
 
 fn unpack_screen_status(status: ScreenStatus) -> &'static str {
     match status {
-        ScreenStatus::ButtonPressed => "Button is pressed",
-        ScreenStatus::ButtonUnpressed => "Button is unpressed",
-        ScreenStatus::ButtonFailed => "Button process failed", // 0x0000144E + len (21/22)
+        ScreenStatus::UpPressed => "Up pressed",
+        ScreenStatus::DownPressed => "Down pressed",
+        ScreenStatus::LeftPressed => "Left pressed",
+        ScreenStatus::RightPressed => "Right pressed",
+        ScreenStatus::SelPressed => "Sel pressed",
     }
 }
 
@@ -167,7 +171,7 @@ pub fn spawn_screen_worker<'scope, 'env: 'scope>(
             move || initialize_screen(bus, cs, dc, bl),
             Screen::handle_message,
         )
-        .expect("Failed to start screen worker")
+        .unwrap_or_else(|_| crate::restart_on_failure("Failed to start screen worker"))
 }
 
 fn initialize_screen<'spi>(

@@ -119,7 +119,7 @@ pub fn spawn_sd_worker<'scope, 'env: 'scope>(
             move || initialize_sd(bus, cs),
             SdFilesystem::handle_message,
         )
-        .expect("Failed to start SD worker")
+        .unwrap_or_else(|_| crate::restart_on_failure("Failed to start SD worker"))
 }
 
 fn initialize_sd<'spi>(

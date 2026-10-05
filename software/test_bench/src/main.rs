@@ -17,7 +17,7 @@ use std::{
 };
 
 use active_object::Address;
-use screen::{ScreenMessage, ScreenStatus};
+use screen::ScreenMessage;
 
 fn init_esp32() {
     // It is necessary to call this function once. Otherwise, some patches to the runtime
@@ -46,17 +46,6 @@ fn start_screen_worker<'scope, 'env: 'scope>(
     (address, worker)
 }
 
-fn finish_screen_worker(
-    screen_address: Address<ScreenMessage>,
-    screen_worker: screen::ScreenWorker<'_>,
-) {
-    drop(screen_address);
-    screen_worker
-        .join()
-        .expect("Screen worker panicked")
-        .expect("Screen setup failed");
-}
-
 fn start_sd_worker<'scope, 'env: 'scope>(
     scope: &'scope Scope<'scope, 'env>,
     bus: &'env SpiDriver<'env>,
@@ -67,18 +56,10 @@ fn start_sd_worker<'scope, 'env: 'scope>(
     (address, worker)
 }
 
-fn finish_workers(
-    sd_address: Address<sd::SdMessage>,
-    sd_worker: sd::SdWorker<'_>,
-    screen_address: Address<ScreenMessage>,
-    screen_worker: screen::ScreenWorker<'_>,
-) {
-    drop(sd_address);
-    let sd_result = sd_worker.join();
-    finish_screen_worker(screen_address, screen_worker);
-    sd_result
-        .expect("SD worker panicked")
-        .expect("SD setup failed");
+fn restart_on_failure(reason: &str) -> ! {
+    // TODO: Log detailed worker errors before restarting.
+    log::error!("{reason}; restarting");
+    esp_idf_svc::hal::reset::restart()
 }
 
 fn main() {
@@ -86,7 +67,7 @@ fn main() {
     let (spi2, pins) = init_peripherals();
 
     let bus = spi::new_bus(spi2, pins.spi_sck, pins.spi_mosi, pins.spi_miso)
-        .expect("SPI bus setup failed");
+        .unwrap_or_else(|_| restart_on_failure("SPI bus setup failed"));
 
     let buttons = buttons::init_buttons(
         pins.btn_up,
@@ -95,36 +76,41 @@ fn main() {
         pins.btn_right,
         pins.btn_sel,
     )
-    .expect("Button setup failed");
+    .unwrap_or_else(|_| restart_on_failure("Button setup failed"));
+
 
     // Scope provides a boundary for each active object's thread
     thread::scope(|scope| {
         let (screen_address, screen_worker) =
             start_screen_worker(scope, &bus, pins.lcd_cs, pins.lcd_dc, pins.lcd_bl);
         let (sd_address, sd_worker) = start_sd_worker(scope, &bus, pins.sd_cs);
+        let button_worker = {
+            let address = screen_address.clone();
+            thread::Builder::new()
+                .name("buttons".into())
+                .spawn(move || {
+                    buttons::register_button_interrupts(buttons, address)
+                })
+                .unwrap_or_else(|_| restart_on_failure("Failed to start button worker"))
+        };
 
         if sd_address
             .post(sd::SdMessage::ShowSongs(screen_address.clone()))
-            .is_ok()
+            .is_err()
         {
-            loop {
-                FreeRtos::delay_ms(200);
-                if sd_worker.is_finished() {
-                    break;
-                }
-                let status = if buttons::is_pressed(&buttons.select) {
-                    ScreenStatus::ButtonPressed
-                } else {
-                    ScreenStatus::ButtonUnpressed
-                };
-                if screen_address
-                    .post(ScreenMessage::SetStatus(status))
-                    .is_err()
-                {
-                    break;
-                }
+            restart_on_failure("SD worker disconnected");
+        }
+        loop {
+            FreeRtos::delay_ms(200);
+            if screen_worker.is_finished() {
+                restart_on_failure("Screen worker exited");
+            }
+            if sd_worker.is_finished() {
+                restart_on_failure("SD worker exited");
+            }
+            if button_worker.is_finished() {
+                restart_on_failure("Button worker exited");
             }
         }
-        finish_workers(sd_address, sd_worker, screen_address, screen_worker);
     });
 }

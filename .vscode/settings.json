@@ -5,7 +5,7 @@
     "software/test_bench/Cargo.toml"
   ],
   "files.exclude": {
-    "software/test_bench/target": true,
-    "software/test_bench/.embuild": true
+    "software/test_bench/target": false,
+    "software/test_bench/.embuild": false
   }
 }
