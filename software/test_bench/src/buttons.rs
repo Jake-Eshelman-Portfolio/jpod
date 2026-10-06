@@ -61,6 +61,8 @@ pub fn register_button_interrupts(
     let notification = Notification::new();
     register_button_interrupt(&mut buttons.up, notification.notifier())?;
     register_button_interrupt(&mut buttons.down, notification.notifier())?;
+    register_button_interrupt(&mut buttons.left, notification.notifier())?;
+    register_button_interrupt(&mut buttons.right, notification.notifier())?;
     register_button_interrupt(&mut buttons.select, notification.notifier())?;
 
     loop {
@@ -79,6 +81,18 @@ pub fn register_button_interrupts(
                 Err(TrySendError::Disconnected(_)) => break,
             }
         }
+        if is_pressed(&buttons.left) {
+            match screen_address.try_post(ScreenMessage::SetStatus(ScreenStatus::LeftPressed)) {
+                Ok(()) | Err(TrySendError::Full(_)) => {}
+                Err(TrySendError::Disconnected(_)) => break,
+            }
+        }
+        if is_pressed(&buttons.right) {
+            match screen_address.try_post(ScreenMessage::SetStatus(ScreenStatus::RightPressed)) {
+                Ok(()) | Err(TrySendError::Full(_)) => {}
+                Err(TrySendError::Disconnected(_)) => break,
+            }
+        }
         if is_pressed(&buttons.select) {
             match screen_address.try_post(ScreenMessage::SetStatus(ScreenStatus::SelPressed)) {
                 Ok(()) | Err(TrySendError::Full(_)) => {}
@@ -88,6 +102,8 @@ pub fn register_button_interrupts(
         }
         buttons.up.enable_interrupt()?;
         buttons.down.enable_interrupt()?;
+        buttons.left.enable_interrupt()?;
+        buttons.right.enable_interrupt()?;
         buttons.select.enable_interrupt()?;
     }
     // Pin driver destructor will unsubscribe pin and restart GPIO, do not need to disable/unsubscribe
