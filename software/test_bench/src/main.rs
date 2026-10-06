@@ -3,6 +3,7 @@ mod buttons;
 pub mod pins;
 mod screen;
 pub(crate) mod sd;
+mod shared_types;
 
 use esp_idf_svc::hal::delay::FreeRtos;
 use esp_idf_svc::hal::{
@@ -111,7 +112,7 @@ fn main() {
         };
 
         if sd_address
-            .post(sd::SdMessage::ShowSongs(screen_address.clone()))
+            .post(sd::SdMessage::FetchSongs(screen_address.clone()))
             .is_err()
         {
             restart_on_failure("SD worker disconnected");

@@ -4,13 +4,15 @@ use std::{
     io::{Read, Write},
     num::NonZeroUsize,
     ops::ControlFlow,
-    path::{Path, PathBuf},
+    path::{Path},
     thread::{Scope, ScopedJoinHandle},
+    sync::Arc,
 };
 
 use crate::{
     active_object::{ActiveObject, Address, Mailbox},
     screen::ScreenMessage,
+    shared_types::Song,
 };
 use esp_idf_svc::{
     fs::fatfs::Fatfs,
@@ -71,17 +73,12 @@ impl Error for SdError {
 pub type SdWorker<'scope> = ScopedJoinHandle<'scope, Result<(), SdError>>;
 
 pub enum SdMessage {
-    ShowSongs(Address<ScreenMessage>),
+    FetchSongs(Address<ScreenMessage>),
 }
 
 struct SdFilesystem<MountGuard> {
     _mount: MountGuard,
-    songs: Vec<Song>,
-}
-
-pub struct Song {
-    pub path: PathBuf,
-    pub name: String,
+    songs: Arc<Vec<Song>>,
 }
 
 impl<MountGuard> SdFilesystem<MountGuard> {
@@ -91,10 +88,9 @@ impl<MountGuard> SdFilesystem<MountGuard> {
 
     fn handle_message(&mut self, message: SdMessage) -> ControlFlow<()> {
         match message {
-            SdMessage::ShowSongs(screen_address) => {
-                let song_names = self.songs.iter().map(|song| song.name.clone()).collect();
+            SdMessage::FetchSongs(screen_address) => {
                 if screen_address
-                    .post(ScreenMessage::ShowSongs(song_names))
+                    .post(ScreenMessage::ShareSongs(Arc::clone(&self.songs)))
                     .is_err()
                 {
                     log::error!("sd: screen worker disconnected");
@@ -139,7 +135,7 @@ fn initialize_sd<'spi>(
     info!("sd: mounted at {MOUNT}");
 
     verify_file_operations()?;
-    let songs = collect_songs(MP3_DIR)?;
+    let songs: Arc<Vec<Song>> = Arc::new(collect_songs(MP3_DIR)?);
     Ok(SdFilesystem {
         _mount: mounted_fs,
         songs,

@@ -79,9 +79,17 @@ pub fn register_button_interrupts(
                 Ok(()) | Err(TrySendError::Full(_)) => {}
                 Err(TrySendError::Disconnected(_)) => break,
             }
+            match screen_address.try_post(ScreenMessage::UpPressed) {
+                Ok(()) | Err(TrySendError::Full(_)) => {}
+                Err(TrySendError::Disconnected(_)) => break,
+            }
         }
         if is_pressed(&buttons.down) {
             match screen_address.try_post(ScreenMessage::SetStatus(ScreenStatus::DownPressed)) {
+                Ok(()) | Err(TrySendError::Full(_)) => {}
+                Err(TrySendError::Disconnected(_)) => break,
+            }
+            match screen_address.try_post(ScreenMessage::DownPressed) {
                 Ok(()) | Err(TrySendError::Full(_)) => {}
                 Err(TrySendError::Disconnected(_)) => break,
             }
