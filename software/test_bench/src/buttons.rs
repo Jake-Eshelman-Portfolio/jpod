@@ -6,6 +6,7 @@ use esp_idf_svc::hal::{
 };
 use esp_idf_svc::sys::EspError;
 use std::sync::{mpsc::TrySendError, Arc};
+use std::time::{Duration, Instant};
 
 use crate::active_object::Address;
 use crate::screen::{ScreenMessage, ScreenStatus};
@@ -54,6 +55,7 @@ fn register_button_interrupt(
     button.enable_interrupt()
 }
 
+
 pub fn register_button_interrupts(
     mut buttons: Buttons,
     screen_address: Address<ScreenMessage>,
@@ -64,6 +66,8 @@ pub fn register_button_interrupts(
     register_button_interrupt(&mut buttons.left, notification.notifier())?;
     register_button_interrupt(&mut buttons.right, notification.notifier())?;
     register_button_interrupt(&mut buttons.select, notification.notifier())?;
+
+    let held_down_threshold = Duration::from_secs(5);
 
     loop {
         notification.wait_any();
@@ -94,9 +98,19 @@ pub fn register_button_interrupts(
             }
         }
         if is_pressed(&buttons.select) {
-            match screen_address.try_post(ScreenMessage::SetStatus(ScreenStatus::SelPressed)) {
+            let start_time = Instant::now();
+            let long_press;
+            while is_pressed(&buttons.select) && start_time.elapsed() < held_down_threshold {
+                FreeRtos::delay_ms(10);
+                continue;
+            }
+            if start_time.elapsed() >= held_down_threshold {
+                long_press = true;
+            } else {
+                long_press = false;
+            }
+            match screen_address.try_post(ScreenMessage::ShortSelectPress(long_press)) {
                 Ok(()) | Err(TrySendError::Full(_)) => {}
-                // If screen worker has exited the program must restart, disconnect
                 Err(TrySendError::Disconnected(_)) => break,
             }
         }
@@ -110,3 +124,14 @@ pub fn register_button_interrupts(
 
     Ok(())
 }
+
+/*
+handle_message:
+set timer(0)
+while is_pressed(&buttons.up) && timer < 5 {
+// do nothing
+}
+check_timer(x seconds)
+if x > 5 seconds -> go to sleep
+else if timer < 5 seconds -> press select 
+*/

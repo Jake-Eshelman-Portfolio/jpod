@@ -16,7 +16,7 @@ use embedded_graphics::{
 use embedded_hal::spi::MODE_3;
 use esp_idf_svc::{
     hal::{
-        delay::{Ets, FreeRtos}, gpio::{Gpio4, Gpio5, Gpio27, Output, PinDriver}, spi::{SpiConfig, SpiDeviceDriver, SpiDriver}, units::FromValueType,
+        delay::Ets, gpio::{Gpio4, Gpio5, Gpio27, Output, PinDriver}, spi::{SpiConfig, SpiDeviceDriver, SpiDriver}, units::FromValueType,
     }, sys::EspError,
 };
 use mipidsi::{models::ST7789, Builder, Display};
@@ -42,6 +42,7 @@ struct Screen<'spi> {
 pub enum ScreenMessage {
     ShowSongs(Vec<String>),
     SetStatus(ScreenStatus),
+    ShortSelectPress(bool)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,7 +51,7 @@ pub enum ScreenStatus {
     DownPressed,
     LeftPressed,
     RightPressed,
-    SelPressed,
+    ShortPress,
 }
 
 // '_ is shorthand for matching lifetime of screen
@@ -92,7 +93,7 @@ impl Screen<'_> {
             .expect("ST7789 line draw failed");
     }
 
-    fn write_songnames(&mut self, songs: &[String]) {
+    fn write_song_names(&mut self, songs: &[String]) {
         let song_area_height = self
             .height
             .saturating_sub(Self::BOTTOM_CUTOFF + Self::STATUS_SEPARATOR_THICKNESS);
@@ -121,6 +122,7 @@ impl Screen<'_> {
 
     fn draw_status(&mut self, status: ScreenStatus) {
         let style = MonoTextStyle::new(&FONT_10X20, Rgb565::WHITE);
+        self.clear_dimensions(0, (self.height - Screen::STATUS_CLEAR_HEIGHT) as i32, self.width, Screen::STATUS_CLEAR_HEIGHT);
         Text::new(
             unpack_screen_status(status),
             Point::new(0, self.height as i32 - Self::STATUS_BASELINE_OFFSET),
@@ -132,13 +134,26 @@ impl Screen<'_> {
 
     fn handle_message(&mut self, message: ScreenMessage) -> ControlFlow<()> {
         match message {
-            ScreenMessage::ShowSongs(songs) => self.write_songnames(&songs),
+            ScreenMessage::ShowSongs(songs) => self.write_song_names(&songs),
             ScreenMessage::SetStatus(status) => {
                 if self.last_status != Some(status) {
-                    self.clear_dimensions(0, (self.height - Screen::STATUS_CLEAR_HEIGHT) as i32, self.width, Screen::STATUS_CLEAR_HEIGHT);
                     self.draw_status(status);
                     self.last_status = Some(status);
                 }
+            }
+            // set_low or high can fail because of SDK, allow user to retry, do not reset
+            ScreenMessage::ShortSelectPress(long_press) => {
+                if long_press {
+                    if let Err(error) = self.backlight.set_low() {
+                        log::error!("Failed to turn off display backlight: {error}");
+                    }
+                } else {
+                    if let Err(error) = self.backlight.set_high() {
+                        log::error!("Failed to turn on display backlight: {error}");
+                    }
+                    self.draw_status(ScreenStatus::ShortPress);
+                }
+                
             }
         }
         ControlFlow::Continue(())
@@ -151,7 +166,7 @@ fn unpack_screen_status(status: ScreenStatus) -> &'static str {
         ScreenStatus::DownPressed => "Down pressed",
         ScreenStatus::LeftPressed => "Left pressed",
         ScreenStatus::RightPressed => "Right pressed",
-        ScreenStatus::SelPressed => "Sel pressed",
+        ScreenStatus::ShortPress => "Short pressed",
     }
 }
 
