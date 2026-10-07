@@ -74,6 +74,7 @@ pub fn register_button_interrupts(
         // Button press interrupt will arrive here, debounce check, reenable, back to sleep
         FreeRtos::delay_ms(30);
         if is_pressed(&buttons.up) {
+            
             match screen_address.try_post(ScreenMessage::SetStatus(ScreenStatus::UpPressed)) {
                 Ok(()) | Err(TrySendError::Full(_)) => {}
                 Err(TrySendError::Disconnected(_)) => break,
@@ -124,14 +125,3 @@ pub fn register_button_interrupts(
 
     Ok(())
 }
-
-/*
-handle_message:
-set timer(0)
-while is_pressed(&buttons.up) && timer < 5 {
-// do nothing
-}
-check_timer(x seconds)
-if x > 5 seconds -> go to sleep
-else if timer < 5 seconds -> press select 
-*/

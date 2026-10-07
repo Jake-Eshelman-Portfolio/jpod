@@ -3,18 +3,19 @@ mod buttons;
 pub mod pins;
 mod screen;
 pub(crate) mod sd;
-pub mod spi;
 
 use esp_idf_svc::hal::delay::FreeRtos;
 use esp_idf_svc::hal::{
-    gpio::{Gpio13, Gpio27, Gpio4, Gpio5},
+    gpio::{Gpio13, Gpio27, Gpio4, Gpio5, Gpio18, Gpio19, Gpio23},
     peripherals::Peripherals,
-    spi::{SpiDriver, SPI2},
+    spi::{SpiDriver, SPI2, Dma, SpiDriverConfig},
 };
 use std::{
     num::NonZeroUsize,
     thread::{self, Scope},
 };
+
+use esp_idf_svc::sys::EspError;
 
 use active_object::Address;
 use screen::ScreenMessage;
@@ -32,6 +33,21 @@ fn init_peripherals() -> (SPI2<'static>, pins::BoardPins) {
     let peripherals = Peripherals::take().unwrap();
     let pins = pins::board_pins(peripherals.pins);
     (peripherals.spi2, pins)
+}
+
+pub fn new_spi_bus(
+    spi: SPI2<'static>,
+    sck: Gpio18<'static>,
+    mosi: Gpio23<'static>,
+    miso: Gpio19<'static>,
+) -> Result<SpiDriver<'static>, EspError> {
+    SpiDriver::new(
+        spi,
+        sck,
+        mosi,
+        Some(miso),
+        &SpiDriverConfig::new().dma(Dma::Auto(4096)),
+    )
 }
 
 fn start_screen_worker<'scope, 'env: 'scope>(
@@ -66,7 +82,7 @@ fn main() {
     init_esp32();
     let (spi2, pins) = init_peripherals();
 
-    let bus = spi::new_bus(spi2, pins.spi_sck, pins.spi_mosi, pins.spi_miso)
+    let bus = new_spi_bus(spi2, pins.spi_sck, pins.spi_mosi, pins.spi_miso)
         .unwrap_or_else(|_| restart_on_failure("SPI bus setup failed"));
 
     let buttons = buttons::init_buttons(
