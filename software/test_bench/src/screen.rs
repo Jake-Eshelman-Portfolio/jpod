@@ -5,7 +5,10 @@ use std::{
     sync::Arc,
 };
 
-use crate::active_object::{ActiveObject, Mailbox};
+use crate::{
+    active_object::{ActiveObject, Address, Mailbox},
+    sd::SdMessage,
+};
 use crate::shared_types::Song;
 use display_interface_spi::SPIInterfaceNoCS;
 use embedded_graphics::{
@@ -18,7 +21,8 @@ use embedded_graphics::{
 use embedded_hal::spi::MODE_3;
 use esp_idf_svc::{
     hal::{
-        delay::Ets, gpio::{Gpio4, Gpio5, Gpio27, Output, PinDriver}, spi::{SpiConfig, SpiDeviceDriver, SpiDriver}, units::FromValueType,
+        delay::Ets, gpio::{Gpio4, Gpio5, Gpio27, Output, PinDriver}, 
+        spi::{SpiConfig, SpiDeviceDriver, SpiDriver}, units::FromValueType,
     }, sys::EspError,
 };
 use mipidsi::{models::ST7789, Builder, Display};
@@ -41,8 +45,10 @@ struct Screen<'spi> {
     current_position: usize,
     current_text: String,
     songs_reference: Arc<Vec<Song>>,
+    sd_address: Address<SdMessage>,
 }
 
+// Messages that others can post to its mailbox
 #[derive(Debug)]
 pub enum ScreenMessage {
     ShareSongs(Arc<Vec<Song>>),
@@ -104,7 +110,11 @@ impl Screen<'_> {
 
     fn draw_status(&mut self, status: ScreenStatus) {
         let style = MonoTextStyle::new(&FONT_10X20, Rgb565::WHITE);
-        self.clear_dimensions(0, (self.height - Screen::STATUS_CLEAR_HEIGHT) as i32, self.width, Screen::STATUS_CLEAR_HEIGHT);
+        self.clear_dimensions(
+            0, 
+            (self.height - Screen::STATUS_CLEAR_HEIGHT) as i32, 
+            self.width, Screen::STATUS_CLEAR_HEIGHT
+        );
         Text::new(
             unpack_screen_status(status),
             Point::new(0, self.height as i32 - Self::STATUS_BASELINE_OFFSET),
@@ -245,6 +255,13 @@ impl Screen<'_> {
                         log::error!("Failed to turn on display backlight: {error}");
                     }
                     self.draw_status(ScreenStatus::ShortPress);
+                    if self
+                        .sd_address
+                        .try_post(SdMessage::DecodeMP3(self.current_position))
+                        .is_err()
+                    {
+                        log::error!("screen: SD worker mailbox is unavailable");
+                    }
                 }
                 
             }
@@ -273,12 +290,13 @@ pub fn spawn_screen_worker<'scope, 'env: 'scope>(
     cs: Gpio5<'env>,
     dc: Gpio27<'env>,
     bl: Gpio4<'env>,
+    sd_address: Address<SdMessage>,
 ) -> ScreenWorker<'scope> {
     ActiveObject::new("screen", NonZeroUsize::new(8 * 1024).unwrap())
         .spawn_scoped(
             scope,
             mailbox,
-            move || initialize_screen(bus, cs, dc, bl),
+            move || initialize_screen(bus, cs, dc, bl, sd_address),
             Screen::handle_message,
         )
         .unwrap_or_else(|_| crate::restart_on_failure("Failed to start screen worker"))
@@ -289,8 +307,9 @@ fn initialize_screen<'spi>(
     cs: Gpio5<'spi>,
     dc: Gpio27<'spi>,
     bl: Gpio4<'spi>,
+    sd_address: Address<SdMessage>,
 ) -> Result<Screen<'spi>, EspError> {
-    let mut screen = setup(bus, cs, dc, bl)?;
+    let mut screen = setup(bus, cs, dc, bl, sd_address)?;
     screen.clear_black();
     screen.backlight.set_high()?;
     screen.draw_line(screen.height as i32 - Screen::BOTTOM_CUTOFF as i32);
@@ -303,6 +322,7 @@ fn setup<'spi>(
     cs: Gpio5<'spi>,
     dc: Gpio27<'spi>,
     bl: Gpio4<'spi>,
+    sd_address: Address<SdMessage>,
 ) -> Result<Screen<'spi>, EspError> {
     let width = 240;
     let height = 320;
@@ -328,5 +348,6 @@ fn setup<'spi>(
         current_position: 0,
         current_text: String::new(),
         songs_reference: Arc::new(Vec::new()),
+        sd_address,
     })
 }

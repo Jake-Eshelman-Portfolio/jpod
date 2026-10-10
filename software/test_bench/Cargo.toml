@@ -16,6 +16,22 @@ opt-level = "s"
 [profile.dev]
 debug = true    # Symbols are nice, and they don't increase the size on Flash
 opt-level = "z"
+
+# Generic sample conversion is compiled into the application, not just symphonia-core.
+[profile.dev.package.test_bench]
+opt-level = 3
+[profile.release.package.test_bench]
+opt-level = 3
+
+[profile.dev.package.symphonia-core]
+opt-level = 3
+[profile.dev.package.symphonia-bundle-mp3]
+opt-level = 3
+[profile.release.package.symphonia-core]
+opt-level = 3
+[profile.release.package.symphonia-bundle-mp3]
+opt-level = 3
+
 [patch.crates-io]
 esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf.git" }
 esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf.git" }
@@ -30,6 +46,7 @@ embedded-hal = "1"
 mipidsi = "0.5.0"
 # Remove `generic-queue-8` if you plan to use `embassy-time` WITH `embassy-executor`
 embassy-time = { version = "0.5", features = ["generic-queue-8"] }
+symphonia = { version = "0.6.1", default-features = false, features = ["mp3"] }
 
 [build-dependencies]
 embuild = "0.33.5"
