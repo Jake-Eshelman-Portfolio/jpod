@@ -21,6 +21,7 @@ struct Reg {
 const DAC_ADDR: u8 = 0x18;
 const MAX_PAGE_SIZE: u8 = 0x80;
 const SOFTWARE_RESET: Reg = Reg { page: Page::Control, addr: 0x01 };
+const DATA_SLOT_OFFSET: Reg = Reg { page: Page::Control, addr: 28 };
 
 
 
@@ -38,6 +39,7 @@ pub enum Page {
 
 
 pub enum DacMessage {
+    TestI2c,
     SongFinished(Address<ScreenMessage>),
 }
 
@@ -101,9 +103,38 @@ impl<Direction> Dac<'_, Direction> {
             Err(e) => { log::error!("{e}; restarting"); }
         }
     }
+    // AI code (cringe)
+    fn read_u8(&mut self, reg: Reg) -> Result<u8, EspError> {
+        self.select_page(reg.page)?;
+        let mut value = [0u8; 1];
+        self.i2c_bus
+            .write_read(DAC_ADDR, &[reg.addr], &mut value, BLOCK)?;
+        Ok(value[0])
+    }
+
+    fn test_i2c(&mut self) -> Result<(), EspError> {
+        for &value in &[0xDE, 0xAD, 0xBE, 0xEF] {
+            self.write(DATA_SLOT_OFFSET, value)?;
+            let readback = self.read_u8(DATA_SLOT_OFFSET)?;
+            assert_eq!(readback, value, "DAC I2C readback mismatch");
+            log::info!("dac: I2C test wrote {value:#04X}, read {readback:#04X}");
+        }
+
+        self.write(DATA_SLOT_OFFSET, 0x00)?;
+        let readback = self.read_u8(DATA_SLOT_OFFSET)?;
+        assert_eq!(readback, 0x00, "DAC I2C restore readback mismatch");
+        log::info!("dac: I2C test restored DATA_SLOT_OFFSET to {readback:#04X}");
+        Ok(())
+    }
 
     fn handle_message(&mut self, message: DacMessage) -> ControlFlow<()> {
         match message {
+            DacMessage::TestI2c => {
+                if let Err(error) = self.test_i2c() {
+                    log::error!("dac: I2C init check failed: {error}");
+                    return ControlFlow::Break(());
+                }
+            }
             DacMessage::SongFinished(_screen_address) => {}
         }
         ControlFlow::Continue(())

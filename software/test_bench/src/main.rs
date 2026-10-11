@@ -162,8 +162,11 @@ fn main() {
             start_screen_worker(scope, &bus, pins.lcd_cs, pins.lcd_dc, pins.lcd_bl);
         let (sd_address, sd_worker) = start_sd_worker(scope, &bus, pins.sd_cs);
         // Only need dac address if we send something to it from main
-        let (_dac_address, dac_worker) = 
+        let (dac_address, dac_worker) = 
             start_dac_worker(scope, i2c_bus, i2s_bus, None);
+        if dac_address.post(dac::DacMessage::TestI2c).is_err() {
+            restart_on_failure("DAC worker disconnected before I2C init check");
+        }
         let button_worker = {
             let address = screen_address.clone();
             thread::Builder::new()
