@@ -78,5 +78,10 @@ hardware/KiCAD/**/*.kicad_sch-bak
 hardware/KiCAD/**/*.kicad_pcb-bak
 hardware/KiCAD/**/*~
 
+<<<<<<< HEAD
 mp3_samples/*.mp3
 mp3_samples/**/*.mp3
+=======
+*.history
+.history/
+>>>>>>> 6b244b6 (fixed .history infinite health glitch)
