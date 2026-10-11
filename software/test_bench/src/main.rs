@@ -28,6 +28,7 @@ use esp_idf_svc::sys::EspError;
 
 use active_object::Address;
 use screen::ScreenMessage;
+use dac::Page;
 
 fn init_esp32() {
     // It is necessary to call this function once. Otherwise, some patches to the runtime
@@ -119,9 +120,10 @@ fn start_dac_worker<'scope, 'env: 'scope>(
     scope: &'scope Scope<'scope, 'env>,
     i2c_bus:  I2cDriver<'env>,
     i2s_bus:  I2sDriver<'env, I2sTx>,
+    current_page: Option<Page>
 ) -> (Address<dac::DacMessage>, dac::DacWorker<'scope>) {
     let (address, mailbox) = active_object::mailbox(NonZeroUsize::new(8).unwrap());
-    let worker = dac::spawn_dac_worker(scope, mailbox, i2c_bus, i2s_bus);
+    let worker = dac::spawn_dac_worker(scope, mailbox, i2c_bus, i2s_bus, current_page);
     (address, worker)
 }
 
@@ -160,7 +162,8 @@ fn main() {
             start_screen_worker(scope, &bus, pins.lcd_cs, pins.lcd_dc, pins.lcd_bl);
         let (sd_address, sd_worker) = start_sd_worker(scope, &bus, pins.sd_cs);
         // Only need dac address if we send something to it from main
-        let (_dac_address, dac_worker) = start_dac_worker(scope, i2c_bus, i2s_bus);
+        let (_dac_address, dac_worker) = 
+            start_dac_worker(scope, i2c_bus, i2s_bus, None);
         let button_worker = {
             let address = screen_address.clone();
             thread::Builder::new()

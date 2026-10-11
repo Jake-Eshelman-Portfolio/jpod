@@ -43,6 +43,7 @@ struct Screen<'spi> {
     songs_reference: Arc<Vec<Song>>,
 }
 
+// Messages that others can post to its mailbox
 #[derive(Debug)]
 pub enum ScreenMessage {
     ShareSongs(Arc<Vec<Song>>),
@@ -245,6 +246,8 @@ impl Screen<'_> {
                         log::error!("Failed to turn on display backlight: {error}");
                     }
                     self.draw_status(ScreenStatus::ShortPress);
+                    // Send a message to SD card with the position
+
                 }
                 
             }

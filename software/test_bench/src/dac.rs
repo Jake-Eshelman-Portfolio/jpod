@@ -9,9 +9,33 @@ use std::{
 use crate::active_object::{ActiveObject, Address, Mailbox};
 use crate::screen::ScreenMessage;
 use esp_idf_svc::{
-    hal::{i2c::I2cDriver, i2s::I2sDriver},
-    sys::EspError,
+    hal::{delay::BLOCK,
+          i2c::I2cDriver, i2s::I2sDriver}, sys::EspError,
 };
+
+#[derive(Clone, Copy)]
+struct Reg {
+    page: Page,
+    addr: u8,
+}
+const DAC_ADDR: u8 = 0x18;
+const MAX_PAGE_SIZE: u8 = 0x80;
+const SOFTWARE_RESET: Reg = Reg { page: Page::Control, addr: 0x01 };
+
+
+
+#[repr(u8)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Page {
+    Control = 0,
+    Analog = 1,
+    Timer = 3,
+    CoefA0 = 8,
+    CoefA1 = 9,
+    CoefB0 = 12,
+    CoefB1 = 13,
+}
+
 
 pub enum DacMessage {
     SongFinished(Address<ScreenMessage>),
@@ -47,11 +71,37 @@ impl Error for DacError {
 pub type DacWorker<'scope> = ScopedJoinHandle<'scope, Result<(), DacError>>;
 
 struct Dac<'env, Direction> {
-    _i2c_bus: I2cDriver<'env>,
-    _i2s_bus: I2sDriver<'env, Direction>,
+    i2c_bus: I2cDriver<'env>,
+    i2s_bus: I2sDriver<'env, Direction>,
+    current_page: Option<Page>, // None = unknown, e.g., right after reset
 }
 
 impl<Direction> Dac<'_, Direction> {
+    // IMPORTANT: Only access pages thru the page enum, read/write to any other pages can brick the DAC
+    fn select_page(&mut self, page: Page) -> Result<(), EspError> {
+        if self.current_page != Some(page) {
+            self.i2c_bus.write(DAC_ADDR, &[Page::Control as u8, page as u8], BLOCK)?;
+            self.current_page = Some(page);
+        }
+        Ok(())
+    }
+
+    fn write(&mut self, reg: Reg, value: u8) -> Result<(), EspError> {
+        // Select page: First write we use byte array 0x00 to get page select, then send the reg.page as next byte to select
+        // Second write we pass a register address (0-127 in hex) and the value we want to set it to
+        self.select_page(reg.page)?;
+        self.i2c_bus.write(DAC_ADDR, &[reg.addr, value], BLOCK)
+    }
+    // TODO: update to return a result later when less tired
+    fn read(&mut self, reg: Reg, len: usize) -> () {
+        self.select_page(reg.page).unwrap(); //yolo
+        let mut buf = [0u8; 128];
+        match self.i2c_bus.write_read(DAC_ADDR, &[reg.addr], &mut buf[..len], BLOCK) {
+            Ok(()) => { log::info!("Bytes Read: {:?} ", buf); }
+            Err(e) => { log::error!("{e}; restarting"); }
+        }
+    }
+
     fn handle_message(&mut self, message: DacMessage) -> ControlFlow<()> {
         match message {
             DacMessage::SongFinished(_screen_address) => {}
@@ -65,12 +115,13 @@ pub fn spawn_dac_worker<'scope, 'env: 'scope, Direction: 'scope>(
     mailbox: Mailbox<DacMessage>,
     i2c_bus:  I2cDriver<'env>,
     i2s_bus:  I2sDriver<'env, Direction>,
+    current_page: Option<Page>
 ) -> DacWorker<'scope> {
     ActiveObject::new("dac", NonZeroUsize::new(8 * 1024).unwrap())
         .spawn_scoped(
             scope,
             mailbox,
-            move || initialize_dac(i2c_bus, i2s_bus),
+            move || initialize_dac(i2c_bus, i2s_bus, current_page),
             Dac::handle_message,
         )
         .unwrap_or_else(|_| crate::restart_on_failure("Failed to start DAC worker"))
@@ -79,9 +130,11 @@ pub fn spawn_dac_worker<'scope, 'env: 'scope, Direction: 'scope>(
 fn initialize_dac<'env, Direction>(
     i2c_bus: I2cDriver<'env>,
     i2s_bus: I2sDriver<'env, Direction>,
+    current_page: Option<Page>
 ) -> Result<Dac<'env, Direction>, DacError> {
     Ok(Dac {
-        _i2c_bus: i2c_bus,
-        _i2s_bus: i2s_bus,
+        i2c_bus,
+        i2s_bus,
+        current_page
     })
 }

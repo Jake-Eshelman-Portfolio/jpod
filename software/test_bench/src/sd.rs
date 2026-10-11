@@ -74,6 +74,7 @@ pub type SdWorker<'scope> = ScopedJoinHandle<'scope, Result<(), SdError>>;
 
 pub enum SdMessage {
     FetchSongs(Address<ScreenMessage>),
+    DecodeMP3(usize),
 }
 
 struct SdFilesystem<MountGuard> {
@@ -90,12 +91,18 @@ impl<MountGuard> SdFilesystem<MountGuard> {
         match message {
             SdMessage::FetchSongs(screen_address) => {
                 if screen_address
+                // Post (address, message)
                     .post(ScreenMessage::ShareSongs(Arc::clone(&self.songs)))
                     .is_err()
                 {
                     log::error!("sd: screen worker disconnected");
                     return ControlFlow::Break(());
                 }
+            }
+            SdMessage::DecodeMP3(song_position) => {
+
+            //     self.songs[song_position]
+            //     // self.songs[song_position].decode -> post to DAC
             }
         }
         ControlFlow::Continue(())
