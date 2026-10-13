@@ -9,8 +9,7 @@ use std::{
 use crate::active_object::{ActiveObject, Address, Mailbox};
 use crate::screen::ScreenMessage;
 use esp_idf_svc::{
-    hal::{delay::BLOCK,
-          i2c::I2cDriver, i2s::I2sDriver}, sys::EspError,
+    hal::{delay::BLOCK, i2c::I2cDriver, i2s::I2sDriver, task::current}, sys::EspError,
 };
 
 #[derive(Clone, Copy)]
@@ -21,6 +20,8 @@ struct Reg {
 const DAC_ADDR: u8 = 0x18;
 const MAX_PAGE_SIZE: u8 = 0x80;
 const SOFTWARE_RESET: Reg = Reg { page: Page::Control, addr: 0x01 };
+const LR_CHANNEL: Reg = Reg { page: Page::Control, addr: 0x40 };
+const SET_VOL: Reg = Reg { page: Page::Control, addr: 0x41 };
 const DATA_SLOT_OFFSET: Reg = Reg { page: Page::Control, addr: 28 };
 
 
@@ -103,6 +104,7 @@ impl<Direction> Dac<'_, Direction> {
             Err(e) => { log::error!("{e}; restarting"); }
         }
     }
+
     // AI code (cringe)
     fn read_u8(&mut self, reg: Reg) -> Result<u8, EspError> {
         self.select_page(reg.page)?;
@@ -125,6 +127,38 @@ impl<Direction> Dac<'_, Direction> {
         assert_eq!(readback, 0x00, "DAC I2C restore readback mismatch");
         log::info!("dac: I2C test restored DATA_SLOT_OFFSET to {readback:#04X}");
         Ok(())
+    }
+
+    fn reset_dac(&mut self) -> Result<(), EspError> {
+        let reset_byte_mask: u8 = 0x01;
+        self.write(SOFTWARE_RESET, reset_byte_mask)
+    }
+
+    fn config_volume_channels(&mut self, mute: bool) -> Result<(), EspError> {
+        // configures (un)mute and sets right volume control to be same as left's
+        let mute_channel_mask: u8 = 0x0E;
+        let unmute_channel_mask: u8 = 0x02;
+        if mute {
+            self.write(LR_CHANNEL, mute_channel_mask)
+        } else {
+            self.write(LR_CHANNEL, unmute_channel_mask)
+        }
+    }
+
+    fn change_volume(&mut self, turn_up: bool) -> Result<(), EspError> {
+        const MAX_VOLUME: i8 = 47;
+        const MIN_VOLUME: i8 = -127;
+
+        let current_vol: u8 = self.read_u8(SET_VOL)?;
+        let mut altered_vol: i8 = current_vol as i8;
+        altered_vol = if turn_up {
+            altered_vol.saturating_add(2).max(MAX_VOLUME)
+        } else {
+            altered_vol.saturating_sub(2).min(MIN_VOLUME)
+        };
+
+        log::info!("dac: Changed volume to {}", altered_vol);
+        self.write(SET_VOL, altered_vol as u8)
     }
 
     fn handle_message(&mut self, message: DacMessage) -> ControlFlow<()> {
