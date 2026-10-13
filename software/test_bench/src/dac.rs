@@ -41,6 +41,7 @@ pub enum Page {
 
 pub enum DacMessage {
     TestI2c,
+    PlaySong(usize),
     SongFinished(Address<ScreenMessage>),
 }
 
@@ -169,6 +170,7 @@ impl<Direction> Dac<'_, Direction> {
                     return ControlFlow::Break(());
                 }
             }
+            DacMessage::PlaySong(_song_position) => {}
             DacMessage::SongFinished(_screen_address) => {}
         }
         ControlFlow::Continue(())

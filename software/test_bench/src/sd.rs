@@ -11,6 +11,7 @@ use std::{
 
 use crate::{
     active_object::{ActiveObject, Address, Mailbox},
+    dac::DacMessage,
     screen::ScreenMessage,
     shared_types::Song,
 };
@@ -80,6 +81,7 @@ pub enum SdMessage {
 struct SdFilesystem<MountGuard> {
     _mount: MountGuard,
     songs: Arc<Vec<Song>>,
+    dac_address: Address<DacMessage>,
 }
 
 impl<MountGuard> SdFilesystem<MountGuard> {
@@ -100,9 +102,9 @@ impl<MountGuard> SdFilesystem<MountGuard> {
                 }
             }
             SdMessage::DecodeMP3(song_position) => {
-
-            //     self.songs[song_position]
-            //     // self.songs[song_position].decode -> post to DAC
+                if self.dac_address.try_post(DacMessage::PlaySong(song_position)).is_err() {
+                    log::error!("sd: DAC worker mailbox is unavailable");
+                }
             }
         }
         ControlFlow::Continue(())
@@ -114,12 +116,13 @@ pub fn spawn_sd_worker<'scope, 'env: 'scope>(
     mailbox: Mailbox<SdMessage>,
     bus: &'env SpiDriver<'env>,
     cs: Gpio13<'env>,
+    dac_address: Address<DacMessage>,
 ) -> SdWorker<'scope> {
     ActiveObject::new("sd", NonZeroUsize::new(8 * 1024).unwrap())
         .spawn_scoped(
             scope,
             mailbox,
-            move || initialize_sd(bus, cs),
+            move || initialize_sd(bus, cs, dac_address),
             SdFilesystem::handle_message,
         )
         .unwrap_or_else(|_| crate::restart_on_failure("Failed to start SD worker"))
@@ -128,6 +131,7 @@ pub fn spawn_sd_worker<'scope, 'env: 'scope>(
 fn initialize_sd<'spi>(
     bus: &'spi SpiDriver<'spi>,
     cs: Gpio13<'spi>,
+    dac_address: Address<DacMessage>,
 ) -> Result<SdFilesystem<impl Sized + 'spi>, SdError> {
     let host = SdSpiHostDriver::new(
         bus,
@@ -146,6 +150,7 @@ fn initialize_sd<'spi>(
     Ok(SdFilesystem {
         _mount: mounted_fs,
         songs,
+        dac_address,
     })
 }
 

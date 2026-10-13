@@ -5,7 +5,10 @@ use std::{
     sync::Arc,
 };
 
-use crate::active_object::{ActiveObject, Mailbox};
+use crate::{
+    active_object::{ActiveObject, Address, Mailbox},
+    sd::SdMessage,
+};
 use crate::shared_types::Song;
 use display_interface_spi::SPIInterfaceNoCS;
 use embedded_graphics::{
@@ -41,6 +44,7 @@ struct Screen<'spi> {
     current_position: usize,
     current_text: String,
     songs_reference: Arc<Vec<Song>>,
+    sd_address: Address<SdMessage>,
 }
 
 // Messages that others can post to its mailbox
@@ -246,8 +250,13 @@ impl Screen<'_> {
                         log::error!("Failed to turn on display backlight: {error}");
                     }
                     self.draw_status(ScreenStatus::ShortPress);
-                    // Send a message to SD card with the position
-
+                    if self
+                        .sd_address
+                        .try_post(SdMessage::DecodeMP3(self.current_position))
+                        .is_err()
+                    {
+                        log::error!("screen: SD worker mailbox is unavailable");
+                    }
                 }
                 
             }
@@ -276,12 +285,13 @@ pub fn spawn_screen_worker<'scope, 'env: 'scope>(
     cs: Gpio5<'env>,
     dc: Gpio27<'env>,
     bl: Gpio4<'env>,
+    sd_address: Address<SdMessage>,
 ) -> ScreenWorker<'scope> {
     ActiveObject::new("screen", NonZeroUsize::new(8 * 1024).unwrap())
         .spawn_scoped(
             scope,
             mailbox,
-            move || initialize_screen(bus, cs, dc, bl),
+            move || initialize_screen(bus, cs, dc, bl, sd_address),
             Screen::handle_message,
         )
         .unwrap_or_else(|_| crate::restart_on_failure("Failed to start screen worker"))
@@ -292,8 +302,9 @@ fn initialize_screen<'spi>(
     cs: Gpio5<'spi>,
     dc: Gpio27<'spi>,
     bl: Gpio4<'spi>,
+    sd_address: Address<SdMessage>,
 ) -> Result<Screen<'spi>, EspError> {
-    let mut screen = setup(bus, cs, dc, bl)?;
+    let mut screen = setup(bus, cs, dc, bl, sd_address)?;
     screen.clear_black();
     screen.backlight.set_high()?;
     screen.draw_line(screen.height as i32 - Screen::BOTTOM_CUTOFF as i32);
@@ -306,6 +317,7 @@ fn setup<'spi>(
     cs: Gpio5<'spi>,
     dc: Gpio27<'spi>,
     bl: Gpio4<'spi>,
+    sd_address: Address<SdMessage>,
 ) -> Result<Screen<'spi>, EspError> {
     let width = 240;
     let height = 320;
@@ -331,5 +343,6 @@ fn setup<'spi>(
         current_position: 0,
         current_text: String::new(),
         songs_reference: Arc::new(Vec::new()),
+        sd_address,
     })
 }

@@ -100,9 +100,10 @@ fn start_screen_worker<'scope, 'env: 'scope>(
     cs: Gpio5<'env>,
     dc: Gpio27<'env>,
     bl: Gpio4<'env>,
+    sd_address: Address<sd::SdMessage>,
 ) -> (Address<ScreenMessage>, screen::ScreenWorker<'scope>) {
     let (address, mailbox) = active_object::mailbox(NonZeroUsize::new(8).unwrap());
-    let worker = screen::spawn_screen_worker(scope, mailbox, bus, cs, dc, bl);
+    let worker = screen::spawn_screen_worker(scope, mailbox, bus, cs, dc, bl, sd_address);
     (address, worker)
 }
 
@@ -110,9 +111,10 @@ fn start_sd_worker<'scope, 'env: 'scope>(
     scope: &'scope Scope<'scope, 'env>,
     bus: &'env SpiDriver<'env>,
     cs: Gpio13<'env>,
+    dac_address: Address<dac::DacMessage>,
 ) -> (Address<sd::SdMessage>, sd::SdWorker<'scope>) {
     let (address, mailbox) = active_object::mailbox(NonZeroUsize::new(8).unwrap());
-    let worker = sd::spawn_sd_worker(scope, mailbox, bus, cs);
+    let worker = sd::spawn_sd_worker(scope, mailbox, bus, cs, dac_address);
     (address, worker)
 }
 
@@ -158,12 +160,13 @@ fn main() {
 
     // Scope provides a boundary for each active object's thread
     thread::scope(|scope| {
-        let (screen_address, screen_worker) =
-            start_screen_worker(scope, &bus, pins.lcd_cs, pins.lcd_dc, pins.lcd_bl);
-        let (sd_address, sd_worker) = start_sd_worker(scope, &bus, pins.sd_cs);
-        // Only need dac address if we send something to it from main
-        let (dac_address, dac_worker) = 
+        let (dac_address, dac_worker) =
             start_dac_worker(scope, i2c_bus, i2s_bus, None);
+        let (sd_address, sd_worker) =
+            start_sd_worker(scope, &bus, pins.sd_cs, dac_address.clone());
+        let (screen_address, screen_worker) =
+            start_screen_worker(scope, &bus, pins.lcd_cs, pins.lcd_dc, pins.lcd_bl, sd_address.clone());
+        // Only need dac address if we send something to it from main
         if dac_address.post(dac::DacMessage::TestI2c).is_err() {
             restart_on_failure("DAC worker disconnected before I2C init check");
         }
