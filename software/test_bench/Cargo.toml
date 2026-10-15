@@ -16,6 +16,16 @@ opt-level = "s"
 [profile.dev]
 debug = true    # Symbols are nice, and they don't increase the size on Flash
 opt-level = "z"
+
+[profile.dev.package.symphonia-core]
+opt-level = 3
+[profile.dev.package.symphonia-bundle-mp3]
+opt-level = 3
+[profile.release.package.symphonia-core]
+opt-level = 3
+[profile.release.package.symphonia-bundle-mp3]
+opt-level = 3
+
 [patch.crates-io]
 esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf.git" }
 esp-idf-hal = { git = "https://github.com/esp-rs/esp-idf.git" }

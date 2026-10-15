@@ -102,6 +102,7 @@ impl<MountGuard> SdFilesystem<MountGuard> {
                 }
             }
             SdMessage::DecodeMP3(song_position) => {
+                
                 if self.dac_address.try_post(DacMessage::PlaySong(song_position)).is_err() {
                     log::error!("sd: DAC worker mailbox is unavailable");
                 }
@@ -118,7 +119,7 @@ pub fn spawn_sd_worker<'scope, 'env: 'scope>(
     cs: Gpio13<'env>,
     dac_address: Address<DacMessage>,
 ) -> SdWorker<'scope> {
-    ActiveObject::new("sd", NonZeroUsize::new(8 * 1024).unwrap())
+    ActiveObject::new("sd", NonZeroUsize::new(64 * 1024).unwrap())
         .spawn_scoped(
             scope,
             mailbox,

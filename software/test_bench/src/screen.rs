@@ -21,7 +21,8 @@ use embedded_graphics::{
 use embedded_hal::spi::MODE_3;
 use esp_idf_svc::{
     hal::{
-        delay::Ets, gpio::{Gpio4, Gpio5, Gpio27, Output, PinDriver}, spi::{SpiConfig, SpiDeviceDriver, SpiDriver}, units::FromValueType,
+        delay::Ets, gpio::{Gpio4, Gpio5, Gpio27, Output, PinDriver}, 
+        spi::{SpiConfig, SpiDeviceDriver, SpiDriver}, units::FromValueType,
     }, sys::EspError,
 };
 use mipidsi::{models::ST7789, Builder, Display};
@@ -109,7 +110,11 @@ impl Screen<'_> {
 
     fn draw_status(&mut self, status: ScreenStatus) {
         let style = MonoTextStyle::new(&FONT_10X20, Rgb565::WHITE);
-        self.clear_dimensions(0, (self.height - Screen::STATUS_CLEAR_HEIGHT) as i32, self.width, Screen::STATUS_CLEAR_HEIGHT);
+        self.clear_dimensions(
+            0, 
+            (self.height - Screen::STATUS_CLEAR_HEIGHT) as i32, 
+            self.width, Screen::STATUS_CLEAR_HEIGHT
+        );
         Text::new(
             unpack_screen_status(status),
             Point::new(0, self.height as i32 - Self::STATUS_BASELINE_OFFSET),
