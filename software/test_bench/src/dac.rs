@@ -9,7 +9,7 @@ use std::{
 use crate::active_object::{ActiveObject, Address, Mailbox};
 use crate::screen::ScreenMessage;
 use esp_idf_svc::{
-    hal::{delay::BLOCK, i2c::I2cDriver, i2s::I2sDriver, task::current}, sys::EspError,
+    hal::{delay::{BLOCK, FreeRtos}, i2c::I2cDriver, i2s::{I2sDriver, I2sTx}}, sys::EspError,
 };
 
 #[derive(Clone, Copy)]
@@ -18,17 +18,33 @@ struct Reg {
     addr: u8,
 }
 const DAC_ADDR: u8 = 0x18;
-const MAX_PAGE_SIZE: u8 = 0x80;
-const SOFTWARE_RESET: Reg = Reg { page: Page::Control, addr: 0x01 };
-const LR_CHANNEL: Reg = Reg { page: Page::Control, addr: 0x40 };
-const SET_VOL: Reg = Reg { page: Page::Control, addr: 0x41 };
+const SOFTWARE_RESET: Reg = Reg { page: Page::Control, addr: 1 };
+const LR_CHANNEL: Reg = Reg { page: Page::Control, addr: 64 };
+const SET_VOL: Reg = Reg { page: Page::Control, addr: 65 };
 const DATA_SLOT_OFFSET: Reg = Reg { page: Page::Control, addr: 28 };
-
+const PLL_CLOCK_SET: Reg = Reg { page: Page::Control, addr: 4 };
+const PLL_PR: Reg = Reg { page: Page::Control, addr: 5 };
+const PLL_J: Reg = Reg { page: Page::Control, addr: 6 };
+const PLL_D_MSB: Reg = Reg { page: Page::Control, addr: 7 };
+const PLL_D_LSB: Reg = Reg { page: Page::Control, addr: 8 };
+const NDAC: Reg = Reg { page: Page::Control, addr: 11 };
+const MDAC: Reg = Reg { page: Page::Control, addr: 12 };
+const DOSR_MSB: Reg = Reg { page: Page::Control, addr: 13 };
+const DOSR_LSB: Reg = Reg { page: Page::Control, addr: 14 };
+const TIMER_CLOCK: Reg = Reg { page: Page::Timer, addr: 16 };
+const POP_REMOVAL: Reg = Reg { page: Page::Analog, addr: 33 };
+const MIXER_ROUTING: Reg = Reg { page: Page::Analog, addr: 35 }; 
+const LEFT_ANALOG_VOL: Reg = Reg { page: Page::Analog, addr: 36 }; 
+const RIGHT_ANALOG_VOL: Reg = Reg { page: Page::Analog, addr: 37 }; 
+const HPL_DRIVER: Reg = Reg { page: Page::Analog, addr: 40 }; 
+const HPR_DRIVER: Reg = Reg { page: Page::Analog, addr: 41 }; 
+const OUTPUT_DRIVER: Reg = Reg { page: Page::Analog, addr: 31 }; 
+const DAC_POWER: Reg = Reg { page: Page::Control, addr: 63 };
 
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum Page {
+enum Page {
     Control = 0,
     Analog = 1,
     Timer = 3,
@@ -37,7 +53,11 @@ pub enum Page {
     CoefB0 = 12,
     CoefB1 = 13,
 }
-
+enum Delays {
+    ResetDelay = 10,
+    PLLDelay = 20,
+    DePopAndSoftStepDelay = 1500, //Can potentially tune with POP_REMOVAL to shorten.
+}
 
 pub enum DacMessage {
     TestI2c,
@@ -74,13 +94,13 @@ impl Error for DacError {
 
 pub type DacWorker<'scope> = ScopedJoinHandle<'scope, Result<(), DacError>>;
 
-struct Dac<'env, Direction> {
+struct Dac<'env> {
     i2c_bus: I2cDriver<'env>,
-    i2s_bus: I2sDriver<'env, Direction>,
+    i2s_bus: I2sDriver<'env, I2sTx>,
     current_page: Option<Page>, // None = unknown, e.g., right after reset
 }
 
-impl<Direction> Dac<'_, Direction> {
+impl Dac<'_> {
     // IMPORTANT: Only access pages thru the page enum, read/write to any other pages can brick the DAC
     fn select_page(&mut self, page: Page) -> Result<(), EspError> {
         if self.current_page != Some(page) {
@@ -135,6 +155,43 @@ impl<Direction> Dac<'_, Direction> {
         self.write(SOFTWARE_RESET, reset_byte_mask)
     }
 
+    fn init_clocking(&mut self) -> Result<(), EspError> {
+        self.write(TIMER_CLOCK, 0x00)?; // 
+        self.write(PLL_CLOCK_SET, 0x07)?;
+        self.write(PLL_J, 20)?;
+        self.write(PLL_D_MSB, 0)?;
+        self.write(PLL_D_LSB, 0)?;
+        self.write(PLL_PR, 0x93)?;
+        FreeRtos::delay_ms(Delays::PLLDelay as u32);
+        self.write(NDAC, 0x85)?;
+        self.write(MDAC, 0x83)?;
+        self.write(DOSR_MSB, 0x00)?;
+        self.write(DOSR_LSB, 0x80)?;
+        Ok(())
+    }
+
+
+
+    fn init_analog(&mut self) -> Result<(), EspError> {
+        self.write(POP_REMOVAL, 0x4e)?;
+        self.write(MIXER_ROUTING, 0x44)?;
+        self.write(LEFT_ANALOG_VOL, 0x92)?; // check 92 val
+        self.write(RIGHT_ANALOG_VOL, 0x92)?;
+        self.write(HPL_DRIVER, 0x06)?;
+        self.write(HPR_DRIVER, 0x06)?;
+        self.write(OUTPUT_DRIVER, 0xC4)?;
+        FreeRtos::delay_ms(Delays::DePopAndSoftStepDelay as u32);
+        Ok(())
+    }
+
+    fn init_power_up(&mut self) -> Result<(), EspError> {
+        self.write(DAC_POWER, 0xD4)?;
+        self.write(SET_VOL, 0xD8)?;
+        self.write(LR_CHANNEL, 0x02)?;
+        Ok(())
+    }
+
+    // Planned for mute button in future
     fn config_volume_channels(&mut self, mute: bool) -> Result<(), EspError> {
         // configures (un)mute and sets right volume control to be same as left's
         let mute_channel_mask: u8 = 0x0E;
@@ -147,15 +204,15 @@ impl<Direction> Dac<'_, Direction> {
     }
 
     fn change_volume(&mut self, turn_up: bool) -> Result<(), EspError> {
-        const MAX_VOLUME: i8 = 47;
+        const MAX_VOLUME: i8 = 0; // goes up to 47
         const MIN_VOLUME: i8 = -127;
 
         let current_vol: u8 = self.read_u8(SET_VOL)?;
         let mut altered_vol: i8 = current_vol as i8;
         altered_vol = if turn_up {
-            altered_vol.saturating_add(2).max(MAX_VOLUME)
+            altered_vol.saturating_add(2).min(MAX_VOLUME)
         } else {
-            altered_vol.saturating_sub(2).min(MIN_VOLUME)
+            altered_vol.saturating_sub(2).max(MIN_VOLUME)
         };
 
         log::info!("dac: Changed volume to {}", altered_vol);
@@ -177,31 +234,37 @@ impl<Direction> Dac<'_, Direction> {
     }
 }
 
-pub fn spawn_dac_worker<'scope, 'env: 'scope, Direction: 'scope>(
+pub fn spawn_dac_worker<'scope, 'env: 'scope>(
     scope: &'scope Scope<'scope, 'env>,
     mailbox: Mailbox<DacMessage>,
-    i2c_bus:  I2cDriver<'env>,
-    i2s_bus:  I2sDriver<'env, Direction>,
-    current_page: Option<Page>
+    i2c_bus: I2cDriver<'env>,
+    i2s_bus: I2sDriver<'env, I2sTx>,
 ) -> DacWorker<'scope> {
     ActiveObject::new("dac", NonZeroUsize::new(8 * 1024).unwrap())
         .spawn_scoped(
             scope,
             mailbox,
-            move || initialize_dac(i2c_bus, i2s_bus, current_page),
+            move || initialize_dac(i2c_bus, i2s_bus),
             Dac::handle_message,
         )
         .unwrap_or_else(|_| crate::restart_on_failure("Failed to start DAC worker"))
 }
 
-fn initialize_dac<'env, Direction>(
+fn initialize_dac<'env>(
     i2c_bus: I2cDriver<'env>,
-    i2s_bus: I2sDriver<'env, Direction>,
-    current_page: Option<Page>
-) -> Result<Dac<'env, Direction>, DacError> {
-    Ok(Dac {
+    i2s_bus: I2sDriver<'env, I2sTx>,
+) -> Result<Dac<'env>, DacError> {
+    let current_page = None;
+    let mut dac = Dac {
         i2c_bus,
         i2s_bus,
         current_page
-    })
+    };
+    dac.reset_dac()?;
+    FreeRtos::delay_ms(Delays::ResetDelay as u32);
+    dac.i2s_bus.tx_enable()?;
+    dac.init_clocking()?;
+    dac.init_analog()?;
+    dac.init_power_up()?;
+    Ok(dac)
 }

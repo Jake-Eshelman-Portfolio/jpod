@@ -28,7 +28,6 @@ use esp_idf_svc::sys::EspError;
 
 use active_object::Address;
 use screen::ScreenMessage;
-use dac::Page;
 
 fn init_esp32() {
     // It is necessary to call this function once. Otherwise, some patches to the runtime
@@ -122,10 +121,9 @@ fn start_dac_worker<'scope, 'env: 'scope>(
     scope: &'scope Scope<'scope, 'env>,
     i2c_bus:  I2cDriver<'env>,
     i2s_bus:  I2sDriver<'env, I2sTx>,
-    current_page: Option<Page>
 ) -> (Address<dac::DacMessage>, dac::DacWorker<'scope>) {
     let (address, mailbox) = active_object::mailbox(NonZeroUsize::new(8).unwrap());
-    let worker = dac::spawn_dac_worker(scope, mailbox, i2c_bus, i2s_bus, current_page);
+    let worker = dac::spawn_dac_worker(scope, mailbox, i2c_bus, i2s_bus);
     (address, worker)
 }
 
@@ -161,7 +159,7 @@ fn main() {
     // Scope provides a boundary for each active object's thread
     thread::scope(|scope| {
         let (dac_address, dac_worker) =
-            start_dac_worker(scope, i2c_bus, i2s_bus, None);
+            start_dac_worker(scope, i2c_bus, i2s_bus);
         let (sd_address, sd_worker) =
             start_sd_worker(scope, &bus, pins.sd_cs, dac_address.clone());
         let (screen_address, screen_worker) =
