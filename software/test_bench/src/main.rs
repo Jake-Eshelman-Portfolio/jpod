@@ -113,7 +113,7 @@ fn start_sd_worker<'scope, 'env: 'scope>(
     dac_address: Address<dac::DacMessage>,
 ) -> (Address<sd::SdMessage>, sd::SdWorker<'scope>) {
     let (address, mailbox) = active_object::mailbox(NonZeroUsize::new(8).unwrap());
-    let worker = sd::spawn_sd_worker(scope, mailbox, bus, cs, dac_address);
+    let worker = sd::spawn_sd_worker(scope, mailbox, bus, cs, dac_address, sd::MOUNT);
     (address, worker)
 }
 

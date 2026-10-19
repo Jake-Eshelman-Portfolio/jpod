@@ -58,7 +58,7 @@ pub enum ScreenMessage {
     UpPressed,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)] 
 pub enum ScreenStatus {
     UpPressed,
     DownPressed,
@@ -124,7 +124,7 @@ impl Screen<'_> {
         .expect("ST7789 text draw failed");
     }
 
-    fn set_highlight(&mut self) {
+    fn set_current_highlight(&mut self) {
         self.draw_highlight(Rgb565::WHITE, Rgb565::BLACK);
     }
 
@@ -151,17 +151,20 @@ impl Screen<'_> {
     }
 
     // Call this before we update the position to reset highlight to black
-    fn clear_highlight(&mut self) {
+    fn clear_current_highlight(&mut self) {
         self.draw_highlight(Rgb565::BLACK, Rgb565::WHITE);
     }
 
     fn update_menu_position(&mut self, direction: ScreenStatus) {
+        let previous_page = self.current_page();
         if direction == ScreenStatus::DownPressed {
             self.current_position = self.current_position
                 .saturating_add(1)
                 .min(self.songs_reference.len().saturating_sub(1));
         } else if direction == ScreenStatus::UpPressed {
             self.current_position = self.current_position.saturating_sub(1);
+        } else {
+            log::warn!("Update menu position called with unexpected button direction: {direction:?}");
         }
 
         let max_name_chars = (self.width / FONT_10X20.character_size.width) as usize;
@@ -170,6 +173,10 @@ impl Screen<'_> {
             .get(self.current_position)
             .map(|song| song.name.chars().take(max_name_chars).collect())
             .unwrap_or_default();
+
+        if self.current_page() != previous_page {
+            self.draw_current_page();
+        }
     }
 
     fn draw_current_page(&mut self)
@@ -184,7 +191,7 @@ impl Screen<'_> {
         let songs_per_screen = Self::MAX_SONGS_PER_SCREEN;
         let songs = Arc::clone(&self.songs_reference);
 
-        let start = (self.current_position / songs_per_screen) * songs_per_screen;
+        let start = self.current_page() * songs_per_screen;
 
         let end = start
             .saturating_add(songs_per_screen)
@@ -209,6 +216,10 @@ impl Screen<'_> {
         }
     }
 
+    fn current_page(&self) -> usize {
+        self.current_position / Self::MAX_SONGS_PER_SCREEN
+    }
+
     fn handle_message(&mut self, message: ScreenMessage) -> ControlFlow<()> {
         match message {
             ScreenMessage::ShareSongs(songs) => {
@@ -216,7 +227,7 @@ impl Screen<'_> {
                 self.current_position = 0;
                 self.update_menu_position(ScreenStatus::UpPressed);
                 self.draw_current_page();
-                self.set_highlight();
+                self.set_current_highlight();
             }
             ScreenMessage::SetStatus(status) => {
                 if self.last_status != Some(status) {
@@ -225,24 +236,14 @@ impl Screen<'_> {
                 }
             }
             ScreenMessage::DownPressed => {
-                let previous_page = self.current_position / Self::MAX_SONGS_PER_SCREEN;
-                self.clear_highlight();
+                self.clear_current_highlight();
                 self.update_menu_position(ScreenStatus::DownPressed);
-                // Only redraw if the page has changed
-                if self.current_position / Self::MAX_SONGS_PER_SCREEN != previous_page {
-                    self.draw_current_page();
-                }
-                self.set_highlight();
+                self.set_current_highlight();
             }
             ScreenMessage::UpPressed => {
-                let previous_page = self.current_position / Self::MAX_SONGS_PER_SCREEN;
-                self.clear_highlight();
+                self.clear_current_highlight();
                 self.update_menu_position(ScreenStatus::UpPressed);
-                // Only redraw if the page has changed
-                if self.current_position / Self::MAX_SONGS_PER_SCREEN != previous_page {
-                    self.draw_current_page();
-                }
-                self.set_highlight();
+                self.set_current_highlight();
             }
             // set_low or high can fail because of SDK, allow user to retry, do not reset
             ScreenMessage::ShortSelectPress(long_press) => {
@@ -263,14 +264,11 @@ impl Screen<'_> {
                         log::error!("screen: SD worker mailbox is unavailable");
                     }
                 }
-                
             }
         }
         ControlFlow::Continue(())
     }
 }
-
-
 
 fn unpack_screen_status(status: ScreenStatus) -> &'static str {
     match status {
@@ -350,4 +348,168 @@ fn setup<'spi>(
         songs_reference: Arc::new(Vec::new()),
         sd_address,
     })
+}
+
+#[cfg(all(test, not(target_os = "espidf")))]
+mod tests {
+    use super::*;
+    use crate::active_object::mailbox;
+    use std::num::NonZeroUsize;
+
+    fn test_screen<'spi>(
+        bus: &'spi SpiDriver<'spi>,
+        backlight: Gpio4<'spi>,
+    ) -> (Screen<'spi>, Mailbox<SdMessage>) {
+        let (sd_address, sd_mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
+        let screen = initialize_screen(
+            bus,
+            Default::default(),
+            Default::default(),
+            backlight,
+            sd_address,
+        )
+        .unwrap();
+        (screen, sd_mailbox)
+    }
+
+    #[test]
+    fn given_screen_on_song_menu_when_status_is_received_status_updates() {
+        let bus = SpiDriver::default();
+        let (mut screen, _sd_mailbox) = test_screen(&bus, Default::default());
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShareSongs(Arc::new(vec![Song {
+                path: Default::default(),
+                name: "Song".into(),
+            }]))),
+            ControlFlow::Continue(())
+        );
+        assert_eq!(screen.last_status, None);
+
+        for status in [
+            ScreenStatus::UpPressed,
+            ScreenStatus::DownPressed,
+            ScreenStatus::LeftPressed,
+            ScreenStatus::RightPressed,
+            ScreenStatus::ShortPress,
+        ] {
+            assert_eq!(
+                screen.handle_message(ScreenMessage::SetStatus(status)),
+                ControlFlow::Continue(())
+            );
+            assert_eq!(screen.last_status, Some(status));
+        }
+    }
+
+    #[test]
+    fn given_start_position_is_on_first_song_of_second_page_and_up_is_pressed_screen_updates_to_previous() {
+        let bus = SpiDriver::default();
+        let (mut screen, _sd_mailbox) = test_screen(&bus, Default::default());
+        screen.songs_reference = Arc::new(
+            (0..=Screen::MAX_SONGS_PER_SCREEN)
+                .map(|index| Song {
+                    path: Default::default(),
+                    name: format!("Song {index}"),
+                })
+                .collect(),
+        );
+        screen.current_position = Screen::MAX_SONGS_PER_SCREEN;
+        screen.current_text = screen.songs_reference[screen.current_position].name.clone();
+        assert_eq!(screen.current_page(), 1);
+
+        assert_eq!(
+            screen.handle_message(ScreenMessage::UpPressed),
+            ControlFlow::Continue(())
+        );
+
+        assert_eq!(screen.current_position, Screen::MAX_SONGS_PER_SCREEN - 1);
+        assert_eq!(screen.current_text, "Song 12");
+        assert_eq!(screen.current_page(), 0);
+    }
+
+    #[test]
+    fn given_start_position_is_on_last_song_and_down_is_pressed_screen_updates_to_next() {
+        let bus = SpiDriver::default();
+        let (mut screen, _sd_mailbox) = test_screen(&bus, Default::default());
+        screen.songs_reference = Arc::new(
+            (0..=Screen::MAX_SONGS_PER_SCREEN)
+                .map(|index| Song {
+                    path: Default::default(),
+                    name: format!("Song {index}"),
+                })
+                .collect(),
+        );
+        screen.current_position = Screen::MAX_SONGS_PER_SCREEN - 1;
+        screen.current_text = screen.songs_reference[screen.current_position].name.clone();
+        assert_eq!(screen.current_page(), 0);
+
+        assert_eq!(
+            screen.handle_message(ScreenMessage::DownPressed),
+            ControlFlow::Continue(())
+        );
+
+        assert_eq!(screen.current_position, Screen::MAX_SONGS_PER_SCREEN);
+        assert_eq!(screen.current_text, "Song 13");
+        assert_eq!(screen.current_page(), 1);
+    }
+
+    #[test]
+    fn given_backlight_write_fails_when_select_is_long_pressed_then_screen_stays_on_and_continues() {
+        let bus = SpiDriver::default();
+        let backlight_pin = Gpio4::default();
+        let backlight = backlight_pin.state();
+        let (mut screen, _sd_mailbox) = test_screen(&bus, backlight_pin);
+        backlight.lock().unwrap().fail_next_write = true;
+
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShortSelectPress(true)),
+            ControlFlow::Continue(())
+        );
+
+        assert_eq!(backlight.lock().unwrap().levels, [true]);
+    }
+
+    #[test]
+    fn given_screen_is_off_and_backlight_write_fails_when_select_is_short_pressed_then_screen_continues() {
+        let bus = SpiDriver::default();
+        let backlight_pin = Gpio4::default();
+        let backlight = backlight_pin.state();
+        let (mut screen, _sd_mailbox) = test_screen(&bus, backlight_pin);
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShortSelectPress(true)),
+            ControlFlow::Continue(())
+        );
+        backlight.lock().unwrap().fail_next_write = true;
+
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShortSelectPress(false)),
+            ControlFlow::Continue(())
+        );
+
+        assert_eq!(backlight.lock().unwrap().levels, [true, false]);
+    }
+
+    #[test]
+    fn given_sd_mailbox_is_closed_when_select_is_short_pressed_then_screen_continues() {
+        let bus = SpiDriver::default();
+        let (mut screen, sd_mailbox) = test_screen(&bus, Default::default());
+        drop(sd_mailbox);
+
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShortSelectPress(false)),
+            ControlFlow::Continue(())
+        );
+    }
+    #[test]
+    fn update_menu_position_called_with_unexpected_value() {
+        let bus = SpiDriver::default();
+        let (mut screen, sd_mailbox) = test_screen(&bus, Default::default());
+        drop(sd_mailbox);
+        let previous_position = screen.current_position;
+        let previous_text = screen.current_text.clone();
+
+        // Todo: Create a logging module and check the log directly, currently we only check that the else was hit
+        screen.update_menu_position(ScreenStatus::LeftPressed);
+        assert_eq!(screen.current_position, previous_position);
+        assert_eq!(screen.current_text, previous_text);
+    }
 }

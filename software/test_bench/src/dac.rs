@@ -6,8 +6,7 @@ use std::{
     thread::{Scope, ScopedJoinHandle},
 };
 
-use crate::active_object::{ActiveObject, Address, Mailbox};
-use crate::screen::ScreenMessage;
+use crate::active_object::{ActiveObject, Mailbox};
 use esp_idf_svc::{
     hal::{delay::{BLOCK, FreeRtos}, i2c::I2cDriver, i2s::{I2sDriver, I2sTx}}, sys::EspError,
 };
@@ -49,10 +48,10 @@ enum Page {
     Control = 0,
     Analog = 1,
     Timer = 3,
-    CoefA0 = 8,
-    CoefA1 = 9,
-    CoefB0 = 12,
-    CoefB1 = 13,
+    _CoefA0 = 8,
+    _CoefA1 = 9,
+    _CoefB0 = 12,
+    _CoefB1 = 13,
 }
 enum Delays {
     ResetDelay = 10,

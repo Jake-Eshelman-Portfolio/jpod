@@ -1,0 +1,2 @@
+[alias]
+html = "run --bin html"

@@ -1,0 +1,12 @@
+[package]
+name = "jpod-hardware-fakes"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Host-only stand-in for the `esp_idf_svc` items imported by the firmware actors.
+# `host_tests` depends on it under the name `esp-idf-svc`; firmware never sees it.
+
+[dependencies]
+embedded-hal = "1"
+embedded-hal-0-2 = { package = "embedded-hal", version = "0.2.7" }
