@@ -3,3 +3,25 @@ name = "jpod-host-tests"
 version = "0.1.0"
 edition = "2021"
 publish = false
+
+[dependencies]
+# Host-only stand-in satisfying the firmware's `esp_idf_svc` imports.
+esp-idf-svc = { package = "jpod-hardware-fakes", path = "hardware_fakes" }
+display-interface-spi = "0.4.1"
+embedded-graphics = "0.7.1"
+embedded-hal = "1"
+log = "0.4"
+mipidsi = "0.5.0"
+symphonia = { version = "0.6.1", default-features = false, features = ["mp3"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+# Mirror firmware: Symphonia and its generic sample conversion compiled into the
+# actor crate are optimized, keeping decoding within the SD worker's stack.
+[profile.dev.package.jpod-host-tests]
+opt-level = 3
+[profile.dev.package.symphonia-core]
+opt-level = 3
+[profile.dev.package.symphonia-bundle-mp3]
+opt-level = 3

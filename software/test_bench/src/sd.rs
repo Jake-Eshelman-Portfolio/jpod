@@ -35,9 +35,10 @@ use symphonia::core::{
     meta::MetadataOptions
 };
 
-const MOUNT: &str = "/sdcard";
-pub const MP3_DIR: &str = "/sdcard/mp3_samples/";
-const TEST_FILE: &str = "/sdcard/JPODTEST.TXT";
+pub const MOUNT: &str = "/sdcard";
+// Relative to the mount point
+pub const MP3_DIR: &str = "mp3_samples/";
+const TEST_FILE: &str = "JPODTEST.TXT";
 const TEST_DATA: &[u8] = b"jpod sd card test";
 
 #[derive(Debug)]
@@ -127,12 +128,13 @@ pub fn spawn_sd_worker<'scope, 'env: 'scope>(
     bus: &'env SpiDriver<'env>,
     cs: Gpio13<'env>,
     dac_address: Address<DacMessage>,
+    mount: &'env str,
 ) -> SdWorker<'scope> {
     ActiveObject::new("sd", NonZeroUsize::new(64 * 1024).unwrap())
         .spawn_scoped(
             scope,
             mailbox,
-            move || initialize_sd(bus, cs, dac_address),
+            move || initialize_sd(bus, cs, dac_address, mount),
             SdFilesystem::handle_message,
         )
         .unwrap_or_else(|_| crate::restart_on_failure("Failed to start SD worker"))
@@ -142,6 +144,7 @@ fn initialize_sd<'spi>(
     bus: &'spi SpiDriver<'spi>,
     cs: Gpio13<'spi>,
     dac_address: Address<DacMessage>,
+    mount: &str,
 ) -> Result<SdFilesystem<impl Sized + 'spi>, SdError> {
     let host = SdSpiHostDriver::new(
         bus,
@@ -152,11 +155,12 @@ fn initialize_sd<'spi>(
         None,
     )?;
     let card = SdCardDriver::new_spi(host, &SdCardConfiguration::new())?;
-    let mounted_fs = MountedFatfs::mount(Fatfs::new_sdcard(0, card)?, MOUNT, 4)?;
-    info!("sd: mounted at {MOUNT}");
+    let mounted_fs = MountedFatfs::mount(Fatfs::new_sdcard(0, card)?, mount, 4)?;
+    info!("sd: mounted at {mount}");
 
-    verify_file_operations()?;
-    let songs: Arc<Vec<Song>> = Arc::new(collect_songs(MP3_DIR)?);
+    let mount = Path::new(mount);
+    verify_file_operations(&mount.join(TEST_FILE))?;
+    let songs: Arc<Vec<Song>> = Arc::new(collect_songs(mount.join(MP3_DIR))?);
     Ok(SdFilesystem {
         _mount: mounted_fs,
         songs,
@@ -185,16 +189,16 @@ fn collect_songs(directory: impl AsRef<Path>) -> Result<Vec<Song>, SdError> {
     Ok(songs)
 }
 
-fn verify_file_operations() -> Result<(), SdError> {
-    fs::File::create(TEST_FILE)?.write_all(TEST_DATA)?;
+fn verify_file_operations(test_file: &Path) -> Result<(), SdError> {
+    fs::File::create(test_file)?.write_all(TEST_DATA)?;
 
     let mut read_back = Vec::new();
-    fs::File::open(TEST_FILE)?.read_to_end(&mut read_back)?;
+    fs::File::open(test_file)?.read_to_end(&mut read_back)?;
     if read_back != TEST_DATA {
-        fs::remove_file(TEST_FILE)?;
+        fs::remove_file(test_file)?;
         return Err(SdError::ReadBackMismatch);
     }
-    fs::remove_file(TEST_FILE)?;
+    fs::remove_file(test_file)?;
     info!("sd: write + read-back + delete OK");
 
     Ok(())
