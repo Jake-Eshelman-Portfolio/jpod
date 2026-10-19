@@ -1,20 +1,23 @@
 use std::{
     error::Error,
     fmt, fs,
-    io::{Read, Write},
-    num::NonZeroUsize,
     ops::ControlFlow,
     path::{Path},
-    thread::{Scope, ScopedJoinHandle},
+    thread::ScopedJoinHandle,
     sync::Arc,
 };
+#[cfg(target_os = "espidf")]
+use std::{io::{Read, Write}, num::NonZeroUsize, thread::Scope};
 
 use crate::{
-    active_object::{ActiveObject, Address, Mailbox},
+    active_object::Address,
     dac::DacMessage,
     screen::ScreenMessage,
     shared_types::Song,
 };
+#[cfg(target_os = "espidf")]
+use crate::active_object::{ActiveObject, Mailbox};
+#[cfg(target_os = "espidf")]
 use esp_idf_svc::{
     fs::fatfs::Fatfs,
     hal::{
@@ -35,18 +38,23 @@ use symphonia::core::{
     meta::MetadataOptions
 };
 
+#[cfg(target_os = "espidf")]
 const MOUNT: &str = "/sdcard";
 pub const MP3_DIR: &str = "/sdcard/mp3_samples/";
+#[cfg(target_os = "espidf")]
 const TEST_FILE: &str = "/sdcard/JPODTEST.TXT";
+#[cfg(target_os = "espidf")]
 const TEST_DATA: &[u8] = b"jpod sd card test";
 
 #[derive(Debug)]
 pub enum SdError {
+    #[cfg(target_os = "espidf")]
     Esp(EspError),
     Io(std::io::Error),
     ReadBackMismatch,
 }
 
+#[cfg(target_os = "espidf")]
 impl From<EspError> for SdError {
     fn from(error: EspError) -> Self {
         Self::Esp(error)
@@ -62,6 +70,7 @@ impl From<std::io::Error> for SdError {
 impl fmt::Display for SdError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            #[cfg(target_os = "espidf")]
             Self::Esp(error) => write!(formatter, "ESP-IDF error: {error}"),
             Self::Io(error) => write!(formatter, "filesystem error: {error}"),
             Self::ReadBackMismatch => write!(formatter, "SD read-back mismatch"),
@@ -72,6 +81,7 @@ impl fmt::Display for SdError {
 impl Error for SdError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            #[cfg(target_os = "espidf")]
             Self::Esp(error) => Some(error),
             Self::Io(error) => Some(error),
             Self::ReadBackMismatch => None,
@@ -86,18 +96,30 @@ pub enum SdMessage {
     DecodeMP3(usize),
 }
 
-struct SdFilesystem<MountGuard> {
+pub struct SdFilesystem<MountGuard> {
     _mount: MountGuard,
     songs: Arc<Vec<Song>>,
     dac_address: Address<DacMessage>,
 }
 
 impl<MountGuard> SdFilesystem<MountGuard> {
+    pub fn new(
+        mount: MountGuard,
+        directory: impl AsRef<Path>,
+        dac_address: Address<DacMessage>,
+    ) -> Result<Self, SdError> {
+        Ok(Self {
+            _mount: mount,
+            songs: Arc::new(collect_songs(directory)?),
+            dac_address,
+        })
+    }
+
     pub fn list_files_recursive(&self, directory: impl AsRef<Path>) -> Result<(), SdError> {
         list_directory(directory.as_ref())
     }
 
-    fn handle_message(&mut self, message: SdMessage) -> ControlFlow<()> {
+    pub fn handle_message(&mut self, message: SdMessage) -> ControlFlow<()> {
         match message {
             SdMessage::FetchSongs(screen_address) => {
                 if screen_address
@@ -121,6 +143,7 @@ impl<MountGuard> SdFilesystem<MountGuard> {
     }
 }
 
+#[cfg(target_os = "espidf")]
 pub fn spawn_sd_worker<'scope, 'env: 'scope>(
     scope: &'scope Scope<'scope, 'env>,
     mailbox: Mailbox<SdMessage>,
@@ -138,6 +161,7 @@ pub fn spawn_sd_worker<'scope, 'env: 'scope>(
         .unwrap_or_else(|_| crate::restart_on_failure("Failed to start SD worker"))
 }
 
+#[cfg(target_os = "espidf")]
 fn initialize_sd<'spi>(
     bus: &'spi SpiDriver<'spi>,
     cs: Gpio13<'spi>,
@@ -156,12 +180,7 @@ fn initialize_sd<'spi>(
     info!("sd: mounted at {MOUNT}");
 
     verify_file_operations()?;
-    let songs: Arc<Vec<Song>> = Arc::new(collect_songs(MP3_DIR)?);
-    Ok(SdFilesystem {
-        _mount: mounted_fs,
-        songs,
-        dac_address,
-    })
+    SdFilesystem::new(mounted_fs, MP3_DIR, dac_address)
 }
 
 fn collect_songs(directory: impl AsRef<Path>) -> Result<Vec<Song>, SdError> {
@@ -185,6 +204,7 @@ fn collect_songs(directory: impl AsRef<Path>) -> Result<Vec<Song>, SdError> {
     Ok(songs)
 }
 
+#[cfg(target_os = "espidf")]
 fn verify_file_operations() -> Result<(), SdError> {
     fs::File::create(TEST_FILE)?.write_all(TEST_DATA)?;
 

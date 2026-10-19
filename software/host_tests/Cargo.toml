@@ -3,3 +3,13 @@ name = "jpod-host-tests"
 version = "0.1.0"
 edition = "2021"
 publish = false
+
+[dependencies]
+embedded-graphics = "0.7.1"
+embedded-hal-mock = { version = "0.11", default-features = false, features = ["eh1"] }
+embedded-hal = "1"
+log = "0.4"
+symphonia = { version = "0.6.1", default-features = false, features = ["mp3"] }
+
+[dev-dependencies]
+tempfile = "3"

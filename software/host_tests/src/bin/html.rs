@@ -2,7 +2,14 @@ use std::process::Command;
 
 fn main() {
     let coverage = Command::new("cargo")
-        .args(["llvm-cov", "--test", "actors", "--html"])
+        .args([
+            "llvm-cov",
+            "--test",
+            "actors",
+            "--html",
+            "--ignore-filename-regex",
+            "/host_tests/(src/(bin/|hardware_fakes/|lib[.]rs)|tests/)",
+        ])
         .status()
         .expect("failed to run cargo llvm-cov");
     assert!(coverage.success(), "coverage generation failed");
@@ -19,5 +26,8 @@ fn main() {
         .current_dir("/mnt/c/Windows")
         .status()
         .expect("failed to launch report in Windows browser");
-    assert!(opened.success(), "failed to launch report in Windows browser");
+    assert!(
+        opened.success(),
+        "failed to launch report in Windows browser"
+    );
 }

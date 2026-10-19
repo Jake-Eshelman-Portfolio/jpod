@@ -1,15 +1,18 @@
 use std::{
-    num::NonZeroUsize,
     ops::ControlFlow,
-    thread::{Scope, ScopedJoinHandle},
     sync::Arc,
 };
+#[cfg(target_os = "espidf")]
+use std::{num::NonZeroUsize, thread::{Scope, ScopedJoinHandle}};
 
 use crate::{
-    active_object::{ActiveObject, Address, Mailbox},
+    active_object::Address,
     sd::SdMessage,
 };
+#[cfg(target_os = "espidf")]
+use crate::active_object::{ActiveObject, Mailbox};
 use crate::shared_types::Song;
+#[cfg(target_os = "espidf")]
 use display_interface_spi::SPIInterfaceNoCS;
 use embedded_graphics::{
     mono_font::{ascii::FONT_10X20, MonoTextStyle},
@@ -18,27 +21,33 @@ use embedded_graphics::{
     primitives::{Line, PrimitiveStyle, Rectangle},
     text::Text,
 };
+use embedded_hal::digital::OutputPin;
+#[cfg(target_os = "espidf")]
 use embedded_hal::spi::MODE_3;
+#[cfg(target_os = "espidf")]
 use esp_idf_svc::{
     hal::{
         delay::Ets, gpio::{Gpio4, Gpio5, Gpio27, Output, PinDriver}, 
         spi::{SpiConfig, SpiDeviceDriver, SpiDriver}, units::FromValueType,
     }, sys::EspError,
 };
+#[cfg(target_os = "espidf")]
 use mipidsi::{models::ST7789, Builder, Display};
 
+#[cfg(target_os = "espidf")]
 type St7789Display<'spi> = Display<
     SPIInterfaceNoCS<SpiDeviceDriver<'spi, &'spi SpiDriver<'spi>>, PinDriver<'spi, Output>>,
     ST7789,
     PinDriver<'spi, Output>,
 >;
 
+#[cfg(target_os = "espidf")]
 pub type ScreenWorker<'scope> = ScopedJoinHandle<'scope, Result<(), EspError>>;
 
 // The display borrows the SPI bus, so the screen cannot outlive that bus.
-struct Screen<'spi> {
-    display: St7789Display<'spi>,
-    backlight: PinDriver<'spi, Output>,
+pub struct Screen<Display, Backlight> {
+    display: Display,
+    backlight: Backlight,
     width: u32,
     height: u32,
     last_status: Option<ScreenStatus>,
@@ -67,8 +76,35 @@ pub enum ScreenStatus {
     ShortPress,
 }
 
-// '_ is shorthand for matching lifetime of screen
-impl Screen<'_> {
+impl<Display, Backlight> Screen<Display, Backlight>
+where
+    Display: DrawTarget<Color = Rgb565>,
+    Display::Error: std::fmt::Debug,
+    Backlight: OutputPin,
+{
+    pub fn new(
+        display: Display,
+        backlight: Backlight,
+        sd_address: Address<SdMessage>,
+    ) -> Result<Self, Backlight::Error> {
+        let size = display.bounding_box().size;
+        let mut screen = Self {
+            display,
+            backlight,
+            width: size.width,
+            height: size.height,
+            last_status: None,
+            current_position: 0,
+            current_text: String::new(),
+            songs_reference: Arc::new(Vec::new()),
+            sd_address,
+        };
+        screen.clear_black();
+        screen.backlight.set_high()?;
+        screen.draw_line(screen.height as i32 - Self::BOTTOM_CUTOFF as i32);
+        Ok(screen)
+    }
+
     const LINE_SPACING: u32 = FONT_10X20.character_size.height;
     const BOTTOM_CUTOFF: u32 = 40;
     const STATUS_SEPARATOR_THICKNESS: u32 = 5;
@@ -112,8 +148,8 @@ impl Screen<'_> {
         let style = MonoTextStyle::new(&FONT_10X20, Rgb565::WHITE);
         self.clear_dimensions(
             0, 
-            (self.height - Screen::STATUS_CLEAR_HEIGHT) as i32, 
-            self.width, Screen::STATUS_CLEAR_HEIGHT
+            (self.height - Self::STATUS_CLEAR_HEIGHT) as i32,
+            self.width, Self::STATUS_CLEAR_HEIGHT
         );
         Text::new(
             unpack_screen_status(status),
@@ -209,7 +245,7 @@ impl Screen<'_> {
         }
     }
 
-    fn handle_message(&mut self, message: ScreenMessage) -> ControlFlow<()> {
+    pub fn handle_message(&mut self, message: ScreenMessage) -> ControlFlow<()> {
         match message {
             ScreenMessage::ShareSongs(songs) => {
                 self.songs_reference = songs;
@@ -248,11 +284,11 @@ impl Screen<'_> {
             ScreenMessage::ShortSelectPress(long_press) => {
                 if long_press {
                     if let Err(error) = self.backlight.set_low() {
-                        log::error!("Failed to turn off display backlight: {error}");
+                        log::error!("Failed to turn off display backlight: {error:?}");
                     }
                 } else {
                     if let Err(error) = self.backlight.set_high() {
-                        log::error!("Failed to turn on display backlight: {error}");
+                        log::error!("Failed to turn on display backlight: {error:?}");
                     }
                     self.draw_status(ScreenStatus::ShortPress);
                     if self
@@ -283,6 +319,7 @@ fn unpack_screen_status(status: ScreenStatus) -> &'static str {
 }
 
 // Env must outlive scope, refers to pins and bus
+#[cfg(target_os = "espidf")]
 pub fn spawn_screen_worker<'scope, 'env: 'scope>(
     scope: &'scope Scope<'scope, 'env>,
     mailbox: Mailbox<ScreenMessage>,
@@ -302,28 +339,25 @@ pub fn spawn_screen_worker<'scope, 'env: 'scope>(
         .unwrap_or_else(|_| crate::restart_on_failure("Failed to start screen worker"))
 }
 
+#[cfg(target_os = "espidf")]
 fn initialize_screen<'spi>(
     bus: &'spi SpiDriver<'spi>,
     cs: Gpio5<'spi>,
     dc: Gpio27<'spi>,
     bl: Gpio4<'spi>,
     sd_address: Address<SdMessage>,
-) -> Result<Screen<'spi>, EspError> {
-    let mut screen = setup(bus, cs, dc, bl, sd_address)?;
-    screen.clear_black();
-    screen.backlight.set_high()?;
-    screen.draw_line(screen.height as i32 - Screen::BOTTOM_CUTOFF as i32);
-    screen.current_position = 0;
-    Ok(screen)
+) -> Result<Screen<St7789Display<'spi>, PinDriver<'spi, Output>>, EspError> {
+    setup(bus, cs, dc, bl, sd_address)
 }
 
+#[cfg(target_os = "espidf")]
 fn setup<'spi>(
     bus: &'spi SpiDriver<'spi>,
     cs: Gpio5<'spi>,
     dc: Gpio27<'spi>,
     bl: Gpio4<'spi>,
     sd_address: Address<SdMessage>,
-) -> Result<Screen<'spi>, EspError> {
+) -> Result<Screen<St7789Display<'spi>, PinDriver<'spi, Output>>, EspError> {
     let width = 240;
     let height = 320;
     let config = SpiConfig::new()
@@ -339,15 +373,5 @@ fn setup<'spi>(
         .init(&mut Ets, None::<PinDriver<'_, Output>>)
         .expect("ST7789 initialization failed");
 
-    Ok(Screen {
-        display,
-        backlight,
-        width,
-        height,
-        last_status: None,
-        current_position: 0,
-        current_text: String::new(),
-        songs_reference: Arc::new(Vec::new()),
-        sd_address,
-    })
+    Screen::new(display, backlight, sd_address).map_err(|error| error.cause())
 }

@@ -1,13 +1,13 @@
 use std::{
     error::Error,
-    fmt,
-    num::NonZeroUsize,
     ops::ControlFlow,
-    thread::{Scope, ScopedJoinHandle},
 };
+#[cfg(target_os = "espidf")]
+use std::{fmt, num::NonZeroUsize, thread::{Scope, ScopedJoinHandle}};
 
-use crate::active_object::{ActiveObject, Address, Mailbox};
-use crate::screen::ScreenMessage;
+#[cfg(target_os = "espidf")]
+use crate::active_object::{ActiveObject, Mailbox};
+#[cfg(target_os = "espidf")]
 use esp_idf_svc::{
     hal::{delay::{BLOCK, FreeRtos}, i2c::I2cDriver, i2s::{I2sDriver, I2sTx}}, sys::EspError,
 };
@@ -65,17 +65,20 @@ pub enum DacMessage {
     PlayChunk(Vec<i16>),
 }
 
+#[cfg(target_os = "espidf")]
 #[derive(Debug)]
 pub enum DacError {
     Esp(EspError),
 }
 
+#[cfg(target_os = "espidf")]
 impl From<EspError> for DacError {
     fn from(error: EspError) -> Self {
         Self::Esp(error)
     }
 }
 
+#[cfg(target_os = "espidf")]
 impl fmt::Display for DacError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -84,6 +87,7 @@ impl fmt::Display for DacError {
     }
 }
 
+#[cfg(target_os = "espidf")]
 impl Error for DacError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
@@ -92,50 +96,102 @@ impl Error for DacError {
     }
 }
 
+#[cfg(target_os = "espidf")]
 pub type DacWorker<'scope> = ScopedJoinHandle<'scope, Result<(), DacError>>;
 
-struct Dac<'env> {
-    i2c_bus: I2cDriver<'env>,
-    i2s_bus: I2sDriver<'env, I2sTx>,
-    current_page: Option<Page>, // None = unknown, e.g., right after reset
+pub trait DacHardware {
+    type Error: Error;
+
+    fn write(&mut self, address: u8, bytes: &[u8]) -> Result<(), Self::Error>;
+    fn write_read(&mut self, address: u8, bytes: &[u8], read: &mut [u8]) -> Result<(), Self::Error>;
+    fn tx_enable(&mut self) -> Result<(), Self::Error>;
+    fn write_audio(&mut self, bytes: &[u8]) -> Result<(), Self::Error>;
+    fn delay_ms(&mut self, milliseconds: u32);
 }
 
-impl Dac<'_> {
+pub struct Dac<Hardware> {
+    hardware: Hardware,
+    current_page: Option<Page>,
+}
+
+#[cfg(target_os = "espidf")]
+struct EspDacHardware<'env> {
+    i2c_bus: I2cDriver<'env>,
+    i2s_bus: I2sDriver<'env, I2sTx>,
+}
+
+#[cfg(target_os = "espidf")]
+impl DacHardware for EspDacHardware<'_> {
+    type Error = EspError;
+
+    fn write(&mut self, address: u8, bytes: &[u8]) -> Result<(), Self::Error> {
+        self.i2c_bus.write(address, bytes, BLOCK)
+    }
+
+    fn write_read(&mut self, address: u8, bytes: &[u8], read: &mut [u8]) -> Result<(), Self::Error> {
+        self.i2c_bus.write_read(address, bytes, read, BLOCK)
+    }
+
+    fn tx_enable(&mut self) -> Result<(), Self::Error> {
+        self.i2s_bus.tx_enable()
+    }
+
+    fn write_audio(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
+        self.i2s_bus.write_all(bytes, BLOCK)
+    }
+
+    fn delay_ms(&mut self, milliseconds: u32) {
+        FreeRtos::delay_ms(milliseconds);
+    }
+}
+
+impl<Hardware: DacHardware> Dac<Hardware> {
+    pub fn new(hardware: Hardware) -> Result<Self, Hardware::Error> {
+        let mut dac = Self { hardware, current_page: None };
+        dac.reset_dac()?;
+        dac.hardware.delay_ms(Delays::ResetDelay as u32);
+        dac.hardware.tx_enable()?;
+        dac.init_clocking()?;
+        dac.init_analog()?;
+        dac.init_power_up()?;
+        Ok(dac)
+    }
+
     // IMPORTANT: Only access pages thru the page enum, read/write to any other pages can brick the DAC
-    fn select_page(&mut self, page: Page) -> Result<(), EspError> {
+    fn select_page(&mut self, page: Page) -> Result<(), Hardware::Error> {
         if self.current_page != Some(page) {
-            self.i2c_bus.write(DAC_ADDR, &[Page::Control as u8, page as u8], BLOCK)?;
+            self.hardware.write(DAC_ADDR, &[Page::Control as u8, page as u8])?;
             self.current_page = Some(page);
         }
         Ok(())
     }
 
-    fn write(&mut self, reg: Reg, value: u8) -> Result<(), EspError> {
+    fn write(&mut self, reg: Reg, value: u8) -> Result<(), Hardware::Error> {
         // Select page: First write we use byte array 0x00 to get page select, then send the reg.page as next byte to select
         // Second write we pass a register address (0-127 in hex) and the value we want to set it to
         self.select_page(reg.page)?;
-        self.i2c_bus.write(DAC_ADDR, &[reg.addr, value], BLOCK)
+        self.hardware.write(DAC_ADDR, &[reg.addr, value])
     }
     // TODO: update to return a result later when less tired
     fn read(&mut self, reg: Reg, len: usize) -> () {
         self.select_page(reg.page).unwrap(); //yolo
         let mut buf = [0u8; 128];
-        match self.i2c_bus.write_read(DAC_ADDR, &[reg.addr], &mut buf[..len], BLOCK) {
+        match self.hardware.write_read(DAC_ADDR, &[reg.addr], &mut buf[..len]) {
             Ok(()) => { log::info!("Bytes Read: {:?} ", buf); }
             Err(e) => { log::error!("{e}; restarting"); }
         }
     }
 
     // AI code (cringe)
-    fn read_u8(&mut self, reg: Reg) -> Result<u8, EspError> {
+    fn read_u8(&mut self, reg: Reg) -> Result<u8, Hardware::Error> {
         self.select_page(reg.page)?;
         let mut value = [0u8; 1];
-        self.i2c_bus
-            .write_read(DAC_ADDR, &[reg.addr], &mut value, BLOCK)?;
+        self.hardware
+            .write_read(DAC_ADDR, &[reg.addr], &mut value)?;
         Ok(value[0])
     }
 
-    fn test_i2c(&mut self) -> Result<(), EspError> {
+    fn test_i2c(&mut self) -> Result<(), Hardware::Error> {
         for &value in &[0xDE, 0xAD, 0xBE, 0xEF] {
             self.write(DATA_SLOT_OFFSET, value)?;
             let readback = self.read_u8(DATA_SLOT_OFFSET)?;
@@ -150,19 +206,19 @@ impl Dac<'_> {
         Ok(())
     }
 
-    fn reset_dac(&mut self) -> Result<(), EspError> {
+    fn reset_dac(&mut self) -> Result<(), Hardware::Error> {
         let reset_byte_mask: u8 = 0x01;
         self.write(SOFTWARE_RESET, reset_byte_mask)
     }
 
-    fn init_clocking(&mut self) -> Result<(), EspError> {
+    fn init_clocking(&mut self) -> Result<(), Hardware::Error> {
         self.write(TIMER_CLOCK, 0x00)?; // 
         self.write(PLL_CLOCK_SET, 0x07)?;
         self.write(PLL_J, 20)?;
         self.write(PLL_D_MSB, 0)?;
         self.write(PLL_D_LSB, 0)?;
         self.write(PLL_PR, 0x93)?;
-        FreeRtos::delay_ms(Delays::PLLDelay as u32);
+        self.hardware.delay_ms(Delays::PLLDelay as u32);
         self.write(NDAC, 0x85)?;
         self.write(MDAC, 0x83)?;
         self.write(DOSR_MSB, 0x00)?;
@@ -170,7 +226,7 @@ impl Dac<'_> {
         Ok(())
     }
 
-    fn init_analog(&mut self) -> Result<(), EspError> {
+    fn init_analog(&mut self) -> Result<(), Hardware::Error> {
         self.write(POP_REMOVAL, 0x4e)?;
         self.write(MIXER_ROUTING, 0x44)?;
         self.write(LEFT_ANALOG_VOL, 0x92)?; // check 92 val
@@ -178,11 +234,11 @@ impl Dac<'_> {
         self.write(HPL_DRIVER, 0x06)?;
         self.write(HPR_DRIVER, 0x06)?;
         self.write(OUTPUT_DRIVER, 0xC4)?;
-        FreeRtos::delay_ms(Delays::DePopAndSoftStepDelay as u32);
+        self.hardware.delay_ms(Delays::DePopAndSoftStepDelay as u32);
         Ok(())
     }
 
-    fn init_power_up(&mut self) -> Result<(), EspError> {
+    fn init_power_up(&mut self) -> Result<(), Hardware::Error> {
         self.write(DAC_POWER, 0xD4)?;
         self.write(LEFT_DAC_VOLUME, 0xD8)?;
         self.write(RIGHT_DAC_VOLUME, 0xD8)?;
@@ -191,7 +247,7 @@ impl Dac<'_> {
     }
 
     // Planned for mute button in future
-    fn config_volume_channels(&mut self, mute: bool) -> Result<(), EspError> {
+    fn config_volume_channels(&mut self, mute: bool) -> Result<(), Hardware::Error> {
         // configures (un)mute and sets right volume control to be same as left's
         let mute_channel_mask: u8 = 0x0E;
         let unmute_channel_mask: u8 = 0x02;
@@ -202,7 +258,7 @@ impl Dac<'_> {
         }
     }
 
-    fn change_volume(&mut self, turn_up: bool) -> Result<(), EspError> {
+    fn change_volume(&mut self, turn_up: bool) -> Result<(), Hardware::Error> {
         const MAX_VOLUME: i8 = 0; // goes up to 47
         const MIN_VOLUME: i8 = -127;
 
@@ -219,7 +275,7 @@ impl Dac<'_> {
         self.write(RIGHT_DAC_VOLUME, altered_vol as u8)
     }
 
-    fn handle_message(&mut self, message: DacMessage) -> ControlFlow<()> {
+    pub fn handle_message(&mut self, message: DacMessage) -> ControlFlow<()> {
         match message {
             DacMessage::TestI2c => {
                 if let Err(error) = self.test_i2c() {
@@ -232,7 +288,7 @@ impl Dac<'_> {
                     .iter()
                     .flat_map(|sample| sample.to_le_bytes())
                     .collect();
-                if let Err(error) = self.i2s_bus.write_all(&bytes, BLOCK) {
+                if let Err(error) = self.hardware.write_audio(&bytes) {
                     log::error!("dac: {error}; fix ur shit"); // lgtm
                 }
             }
@@ -241,6 +297,7 @@ impl Dac<'_> {
     }
 }
 
+#[cfg(target_os = "espidf")]
 pub fn spawn_dac_worker<'scope, 'env: 'scope>(
     scope: &'scope Scope<'scope, 'env>,
     mailbox: Mailbox<DacMessage>,
@@ -257,21 +314,10 @@ pub fn spawn_dac_worker<'scope, 'env: 'scope>(
         .unwrap_or_else(|_| crate::restart_on_failure("Failed to start DAC worker"))
 }
 
+#[cfg(target_os = "espidf")]
 fn initialize_dac<'env>(
     i2c_bus: I2cDriver<'env>,
     i2s_bus: I2sDriver<'env, I2sTx>,
-) -> Result<Dac<'env>, DacError> {
-    let current_page = None;
-    let mut dac = Dac {
-        i2c_bus,
-        i2s_bus,
-        current_page
-    };
-    dac.reset_dac()?;
-    FreeRtos::delay_ms(Delays::ResetDelay as u32);
-    dac.i2s_bus.tx_enable()?;
-    dac.init_clocking()?;
-    dac.init_analog()?;
-    dac.init_power_up()?;
-    Ok(dac)
+) -> Result<Dac<EspDacHardware<'env>>, DacError> {
+    Ok(Dac::new(EspDacHardware { i2c_bus, i2s_bus })?)
 }
