@@ -184,7 +184,7 @@ impl Screen<'_> {
         let songs_per_screen = Self::MAX_SONGS_PER_SCREEN;
         let songs = Arc::clone(&self.songs_reference);
 
-        let start = (self.current_position / songs_per_screen) * songs_per_screen;
+        let start = (self.current_position / songs_per_screen) * songs_per_screen;              
 
         let end = start
             .saturating_add(songs_per_screen)
@@ -270,8 +270,6 @@ impl Screen<'_> {
     }
 }
 
-
-
 fn unpack_screen_status(status: ScreenStatus) -> &'static str {
     match status {
         ScreenStatus::UpPressed => "Up pressed",
@@ -350,4 +348,13 @@ fn setup<'spi>(
         songs_reference: Arc::new(Vec::new()),
         sd_address,
     })
+}
+
+#[cfg(all(test, not(target_os = "espidf")))]
+mod tests{
+
+    // #[test]
+    // fn 
+
+
 }

@@ -90,3 +90,65 @@ impl ActiveObject {
             })
     }
 }
+
+#[cfg(all(test, not(target_os = "espidf")))]
+mod tests {
+    use super::{mailbox, ActiveObject, Mailbox};
+    use std::{num::NonZeroUsize, ops::ControlFlow, sync::mpsc::TrySendError, thread};
+
+    type Initialization = Result<(), &'static str>;
+
+    // Each message is the ControlFlow the handler returns. Every test shares this one
+    // worker so coverage measures a single compiled instance of the worker loop.
+    fn run_worker(
+        mailbox: Mailbox<ControlFlow<()>>,
+        initialization: Initialization,
+    ) -> (Initialization, usize) {
+        let mut handled = 0;
+        let result = thread::scope(|scope| {
+            ActiveObject::new("test-worker", NonZeroUsize::new(64 * 1024).unwrap())
+                .spawn_scoped(scope, mailbox, || initialization, |_, flow| {
+                    handled += 1;
+                    flow
+                })
+                .unwrap()
+                .join()
+                .unwrap()
+        });
+        (result, handled)
+    }
+
+    #[test]
+    fn given_open_address_when_handler_breaks_then_worker_stops() {
+        let (address, mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
+        address.post(ControlFlow::Break(())).unwrap();
+
+        assert_eq!(run_worker(mailbox, Ok(())), (Ok(()), 1));
+        assert_eq!(
+            address.try_post(ControlFlow::Break(())),
+            Err(TrySendError::Disconnected(ControlFlow::Break(())))
+        );
+    }
+
+    #[test]
+    fn given_queued_messages_when_handler_continues_then_all_are_handled() {
+        let (address, mailbox) = mailbox(NonZeroUsize::new(2).unwrap());
+        address.post(ControlFlow::Continue(())).unwrap();
+        address.post(ControlFlow::Continue(())).unwrap();
+        drop(address);
+
+        assert_eq!(run_worker(mailbox, Ok(())), (Ok(()), 2));
+    }
+
+    #[test]
+    fn given_initialization_fails_when_worker_starts_then_error_is_returned_unhandled() {
+        let (address, mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
+        address.post(ControlFlow::Continue(())).unwrap();
+        drop(address);
+
+        assert_eq!(
+            run_worker(mailbox, Err("initialization failed")),
+            (Err("initialization failed"), 0)
+        );
+    }
+}

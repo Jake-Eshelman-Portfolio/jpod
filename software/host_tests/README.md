@@ -7,15 +7,16 @@ cargo test
 cargo html
 ```
 
-- `cargo test` runs the host tests, including the real-actor integration test.
-- `cargo html` uses the local Cargo alias to run that integration test with
-  coverage, generate HTML, and open the report in a Windows browser from WSL.
+- `cargo test` runs all test targets in the `jpod-host-tests` package. The unit
+  tests and actor-flow integration test share the library's test executable.
+- `cargo html` uses the local Cargo alias to run all test targets with coverage,
+  generate HTML, and open the report in a Windows browser from WSL.
 - The report is saved at [target/llvm-cov/html/index.html](target/llvm-cov/html/index.html).
   The launcher requires `wslpath`, `cmd.exe`, and `/mnt/c/Windows`. Coverage can
   also be generated without opening a browser:
 
   ```sh
-  cargo llvm-cov --test actors --html --ignore-filename-regex '/host_tests/src/(bin/|lib[.]rs$)'
+  cargo llvm-cov --all-targets --html --ignore-filename-regex '/host_tests/src/(bin/|lib[.]rs$|actor_tests[.]rs$)'
   ```
 
 Install coverage tools once if needed:
@@ -80,7 +81,7 @@ return success; the current fakes do not inject hardware failures.
 
 ## Integration test flow and assertions
 
-The single test in [tests/actors.rs](tests/actors.rs) is named
+The actor-flow test in [src/actor_tests.rs](src/actor_tests.rs) is named
 `given_songs_on_sd_when_select_is_short_pressed_then_decoded_audio_reaches_i2s`.
 
 1. Create a temporary SD directory containing `mp3_samples/silence.mp3`. The
@@ -122,12 +123,20 @@ fakes or worker threads. Run it from this directory with:
 cargo test --lib sd::tests
 ```
 
-`cargo html` measures the `actors` integration test. The report includes the
-imported production actor sources, not just the mailbox runtime. Host library
-glue and the HTML launcher are explicitly excluded; the separate fake dependency
-is outside the default package coverage scope. Keep exclusions narrow: imported
-production paths can appear as `host_tests/src/../../test_bench/src/...`, so
-excluding all of `host_tests/src` would also hide the code being tested.
+`cargo html` measures all test targets in the host-test package. The report
+includes the imported production actor sources, not just the mailbox runtime.
+Host library glue, actor-test harness code, and the HTML launcher are explicitly
+excluded; the production files containing in-file unit tests remain included.
+The actor-flow test is a `#[cfg(test)]` library module rather than a separate
+Cargo integration-test target. It still tests all three actors together, but
+shares the library test build with the unit tests to avoid cross-binary copies
+of the production code in coverage.
+The fakes crate
+is a path dependency rather than a workspace member, so tests added inside that
+crate would need to be run separately with its own manifest. Keep exclusions
+narrow: imported production paths can appear as
+`host_tests/src/../../test_bench/src/...`, so excluding all of `host_tests/src`
+would also hide the code being tested.
 
 This is a successful actor-flow test, not complete feature or hardware coverage.
 It does not run firmware `main`, real peripheral acquisition/bus setup, the

@@ -4,12 +4,11 @@ fn main() {
     let coverage = Command::new("cargo")
         .args([
             "llvm-cov",
-            "--test",
-            "actors",
+            "--all-targets",
             "--html",
             // Host helpers only; imported firmware is recorded under host_tests/src/../../test_bench.
             "--ignore-filename-regex",
-            "/host_tests/src/(bin/|lib[.]rs$)",
+            "/host_tests/src/(bin/|lib[.]rs$|actor_tests[.]rs$)",
         ])
         .status()
         .expect("failed to run cargo llvm-cov");

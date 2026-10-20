@@ -306,7 +306,7 @@ fn decode_to_pcm_and_post(path: &Path, dac_address: &Address<DacMessage>) {
         match decoder.decode(&packet) {
             Ok(decoded) => {
                 let samples = decoded_to_pcm(decoded);
-                dac_address.post(DacMessage::PlayChunk(samples));
+                let _ = dac_address.post(DacMessage::PlayChunk(samples));
             }
             Err(SymphoniaError::IoError(_)) => {
                 // The packet failed to decode due to an IO error, skip the packet.

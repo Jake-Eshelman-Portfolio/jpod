@@ -6,7 +6,7 @@ use esp_idf_svc::hal::{
     i2s::{I2sDriver, I2sTx},
     spi::SpiDriver,
 };
-use jpod_host_tests::{
+use crate::{
     active_object::{mailbox, Address},
     dac::{spawn_dac_worker, DacMessage, DacWorker},
     screen::{spawn_screen_worker, ScreenMessage, ScreenWorker},
@@ -64,6 +64,15 @@ fn write_silent_mp3(directory: &Path) {
     fs::write(directory.join(MP3_DIR).join("silence.mp3"), frame.repeat(3)).unwrap();
 }
 
+// Screen:R0: Given screen on song menu, when select is pressed the software shall play that song
+
+// given_screen_on_song_menu_when_select_is_short_pressed_then_the_song_plays
+// py script: grab first word after given to make the module
+// py script: grab the whole phrase after when
+// py script: sub then with shall
+// grabs the calls stack
+// outputs a yml with the call stack
+
 #[test]
 fn given_songs_on_sd_when_select_is_short_pressed_then_decoded_audio_reaches_i2s() {
     // Given
@@ -103,4 +112,5 @@ fn given_songs_on_sd_when_select_is_short_pressed_then_decoded_audio_reaches_i2s
     assert!(i2s.enabled);
     assert_eq!(i2s.bytes.len(), 3 * 1152 * 2 * 2);
     assert!(i2s.bytes.iter().all(|&byte| byte == 0));
+    // Get call stack - list of all functions invoked in this test = requirement
 }
