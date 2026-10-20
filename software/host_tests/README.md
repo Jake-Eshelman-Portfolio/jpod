@@ -112,6 +112,16 @@ The single test in [tests/actors.rs](tests/actors.rs) is named
 
 ## Coverage and limits
 
+An example host-only unit test lives in the `tests` module at the bottom of
+[sd.rs](../test_bench/src/sd.rs). It calls the same private `decoded_to_pcm`
+helper as the decoder, using known floating-point stereo samples to check
+`i16` scaling, saturation, and left/right interleaving. It needs no hardware
+fakes or worker threads. Run it from this directory with:
+
+```sh
+cargo test --lib sd::tests
+```
+
 `cargo html` measures the `actors` integration test. The report includes the
 imported production actor sources, not just the mailbox runtime. Host library
 glue and the HTML launcher are explicitly excluded; the separate fake dependency

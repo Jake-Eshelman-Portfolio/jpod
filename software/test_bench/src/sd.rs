@@ -28,6 +28,7 @@ use esp_idf_svc::{
 use log::info;
 
 use symphonia::core::{
+    audio::GenericAudioBufferRef,
     codecs::audio::AudioDecoderOptions,
     errors::Error as SymphoniaError,
     formats::{FormatOptions, TrackType, probe::Hint},
@@ -304,8 +305,7 @@ fn decode_to_pcm_and_post(path: &Path, dac_address: &Address<DacMessage>) {
         // Decode the packet into audio samples.
         match decoder.decode(&packet) {
             Ok(decoded) => {
-                let mut samples = Vec::<i16>::new();
-                decoded.copy_to_vec_interleaved(&mut samples);
+                let samples = decoded_to_pcm(decoded);
                 dac_address.post(DacMessage::PlayChunk(samples));
             }
             Err(SymphoniaError::IoError(_)) => {
@@ -321,5 +321,35 @@ fn decode_to_pcm_and_post(path: &Path, dac_address: &Address<DacMessage>) {
                 panic!("{}", err);
             }
         }
+    }
+}
+
+fn decoded_to_pcm(decoded: GenericAudioBufferRef<'_>) -> Vec<i16> {
+    let mut samples = Vec::new();
+    decoded.copy_to_vec_interleaved(&mut samples);
+    samples
+}
+
+#[cfg(all(test, not(target_os = "espidf")))]
+mod tests {
+    use super::decoded_to_pcm;
+    use symphonia::core::audio::{layouts::CHANNEL_LAYOUT_STEREO, AudioBuffer, AudioSpec};
+
+    #[test]
+    fn given_float_stereo_when_converted_to_pcm_then_samples_are_scaled_clipped_and_interleaved() {
+        let spec = AudioSpec::new(44_100, CHANNEL_LAYOUT_STEREO);
+        let mut decoded = AudioBuffer::<f32>::new(spec, 4);
+        decoded.render(Some(1), &[-1.0, 1.0]);
+        decoded.render(Some(1), &[-0.5, 0.5]);
+        decoded.render(Some(1), &[0.0, 0.25]);
+        decoded.render(Some(1), &[-2.0, 2.0]);
+
+        let samples = decoded_to_pcm((&decoded).into());
+
+        // Each frame is left, right; normalized floats scale by 32768 and saturate.
+        assert_eq!(
+            samples,
+            [i16::MIN, i16::MAX, -16_384, 16_384, 0, 8_192, i16::MIN, i16::MAX]
+        );
     }
 }
