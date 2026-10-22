@@ -10,8 +10,10 @@ pub mod sys {
     #[allow(non_camel_case_types)]
     pub type esp_err_t = i32;
 
+    pub const ESP_FAIL: esp_err_t = -1;
+
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-    pub struct EspError(esp_err_t);
+    pub struct EspError(pub(crate) esp_err_t);
 
     impl fmt::Display for EspError {
         fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -42,20 +44,45 @@ pub mod hal {
     }
 
     pub mod gpio {
-        use std::marker::PhantomData;
+        use std::{
+            marker::PhantomData,
+            sync::{Arc, Mutex},
+        };
 
-        use crate::sys::EspError;
+        use crate::sys::{EspError, ESP_FAIL};
+
+        /// Output levels written to one pin, oldest first (`true` is high).
+        #[derive(Debug, Default)]
+        pub struct PinState {
+            pub levels: Vec<bool>,
+            pub fail_next_write: bool,
+        }
 
         pub trait InputPin {}
-        pub trait OutputPin {}
+        pub trait OutputPin {
+            fn state(&self) -> Arc<Mutex<PinState>>;
+        }
 
         macro_rules! pins {
             ($($name:ident),*) => {$(
                 #[derive(Default)]
-                pub struct $name<'d>(PhantomData<&'d mut ()>);
+                pub struct $name<'d> {
+                    state: Arc<Mutex<PinState>>,
+                    _p: PhantomData<&'d mut ()>,
+                }
+
+                impl $name<'_> {
+                    pub fn state(&self) -> Arc<Mutex<PinState>> {
+                        Arc::clone(&self.state)
+                    }
+                }
 
                 impl InputPin for $name<'_> {}
-                impl OutputPin for $name<'_> {}
+                impl OutputPin for $name<'_> {
+                    fn state(&self) -> Arc<Mutex<PinState>> {
+                        Arc::clone(&self.state)
+                    }
+                }
             )*};
         }
 
@@ -70,21 +97,34 @@ pub mod hal {
         pub struct Output;
 
         pub struct PinDriver<'d, MODE> {
+            state: Arc<Mutex<PinState>>,
             _p: PhantomData<(&'d mut (), MODE)>,
         }
 
         impl<'d> PinDriver<'d, Output> {
-            pub fn output<T: OutputPin + 'd>(_pin: T) -> Result<Self, EspError> {
-                Ok(Self { _p: PhantomData })
+            pub fn output<T: OutputPin + 'd>(pin: T) -> Result<Self, EspError> {
+                Ok(Self {
+                    state: pin.state(),
+                    _p: PhantomData,
+                })
             }
         }
 
         impl<MODE> PinDriver<'_, MODE> {
             pub fn set_high(&mut self) -> Result<(), EspError> {
-                Ok(())
+                self.write(true)
             }
 
             pub fn set_low(&mut self) -> Result<(), EspError> {
+                self.write(false)
+            }
+
+            fn write(&mut self, level: bool) -> Result<(), EspError> {
+                let mut state = self.state.lock().unwrap();
+                if std::mem::take(&mut state.fail_next_write) {
+                    return Err(EspError(ESP_FAIL));
+                }
+                state.levels.push(level);
                 Ok(())
             }
         }

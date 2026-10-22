@@ -361,6 +361,76 @@ mod tests {
     use std::num::NonZeroUsize;
 
     #[test]
+    fn given_screen_on_song_menu_when_status_is_received_status_updates() {
+        let bus = SpiDriver::default();
+        let (sd_address, _sd_mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
+        let mut screen = initialize_screen(
+            &bus,
+            Default::default(),
+            Default::default(),
+            Default::default(),
+            sd_address,
+        )
+        .unwrap();
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShareSongs(Arc::new(vec![Song {
+                path: Default::default(),
+                name: "Song".into(),
+            }]))),
+            ControlFlow::Continue(())
+        );
+        assert_eq!(screen.last_status, None);
+
+        for status in [
+            ScreenStatus::UpPressed,
+            ScreenStatus::DownPressed,
+            ScreenStatus::LeftPressed,
+            ScreenStatus::RightPressed,
+            ScreenStatus::ShortPress,
+        ] {
+            assert_eq!(
+                screen.handle_message(ScreenMessage::SetStatus(status)),
+                ControlFlow::Continue(())
+            );
+            assert_eq!(screen.last_status, Some(status));
+        }
+    }
+
+    #[test]
+    fn given_start_position_is_on_first_song_of_second_page_and_up_is_pressed_screen_updates_to_previous() {
+        let bus = SpiDriver::default();
+        let (sd_address, _sd_mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
+        let mut screen = initialize_screen(
+            &bus,
+            Default::default(),
+            Default::default(),
+            Default::default(),
+            sd_address,
+        )
+        .unwrap();
+        screen.songs_reference = Arc::new(
+            (0..=Screen::MAX_SONGS_PER_SCREEN)
+                .map(|index| Song {
+                    path: Default::default(),
+                    name: format!("Song {index}"),
+                })
+                .collect(),
+        );
+        screen.current_position = Screen::MAX_SONGS_PER_SCREEN;
+        screen.current_text = screen.songs_reference[screen.current_position].name.clone();
+        assert_eq!(screen.current_page(), 1);
+
+        assert_eq!(
+            screen.handle_message(ScreenMessage::UpPressed),
+            ControlFlow::Continue(())
+        );
+
+        assert_eq!(screen.current_position, Screen::MAX_SONGS_PER_SCREEN - 1);
+        assert_eq!(screen.current_text, "Song 12");
+        assert_eq!(screen.current_page(), 0);
+    }
+
+    #[test]
     fn given_start_position_is_on_last_song_and_down_is_pressed_screen_updates_to_next() {
         let bus = SpiDriver::default();
         let (sd_address, _sd_mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
@@ -392,5 +462,77 @@ mod tests {
         assert_eq!(screen.current_position, Screen::MAX_SONGS_PER_SCREEN);
         assert_eq!(screen.current_text, "Song 13");
         assert_eq!(screen.current_page(), 1);
+    }
+
+    #[test]
+    fn given_backlight_write_fails_when_select_is_long_pressed_then_screen_stays_on_and_continues() {
+        let bus = SpiDriver::default();
+        let (sd_address, _sd_mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
+        let backlight_pin = Gpio4::default();
+        let backlight = backlight_pin.state();
+        let mut screen = initialize_screen(
+            &bus,
+            Default::default(),
+            Default::default(),
+            backlight_pin,
+            sd_address,
+        )
+        .unwrap();
+        backlight.lock().unwrap().fail_next_write = true;
+
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShortSelectPress(true)),
+            ControlFlow::Continue(())
+        );
+
+        assert_eq!(backlight.lock().unwrap().levels, [true]);
+    }
+
+    #[test]
+    fn given_screen_is_off_and_backlight_write_fails_when_select_is_short_pressed_then_screen_continues() {
+        let bus = SpiDriver::default();
+        let (sd_address, _sd_mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
+        let backlight_pin = Gpio4::default();
+        let backlight = backlight_pin.state();
+        let mut screen = initialize_screen(
+            &bus,
+            Default::default(),
+            Default::default(),
+            backlight_pin,
+            sd_address,
+        )
+        .unwrap();
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShortSelectPress(true)),
+            ControlFlow::Continue(())
+        );
+        backlight.lock().unwrap().fail_next_write = true;
+
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShortSelectPress(false)),
+            ControlFlow::Continue(())
+        );
+
+        assert_eq!(backlight.lock().unwrap().levels, [true, false]);
+    }
+
+    #[test]
+    fn given_sd_mailbox_is_closed_when_select_is_short_pressed_then_screen_continues() {
+        let bus = SpiDriver::default();
+        let (sd_address, sd_mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
+        let mut screen = initialize_screen(
+            &bus,
+            Default::default(),
+            Default::default(),
+            Default::default(),
+            sd_address,
+        )
+        .unwrap();
+        drop(sd_mailbox);
+
+        assert_eq!(
+            screen.handle_message(ScreenMessage::ShortSelectPress(false)),
+            ControlFlow::Continue(())
+        );
     }
 }

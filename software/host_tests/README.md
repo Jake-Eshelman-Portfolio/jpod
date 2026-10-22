@@ -8,7 +8,7 @@ cargo html
 ```
 
 - `cargo test` runs all test targets in the `jpod-host-tests` package. The unit
-  tests and actor-flow integration test share the library's test executable.
+  tests and actor tests share the library's test executable.
 - `cargo html` uses the local Cargo alias to run all test targets with coverage,
   generate HTML, and open the report in a Windows browser from WSL.
 - The report is saved at [target/llvm-cov/html/index.html](target/llvm-cov/html/index.html).
@@ -73,7 +73,7 @@ return success; the current fakes do not inject hardware failures.
 | DAC I2C bus | `I2cDriver` records each write's device address and bytes in shared memory. `write_read` records the outgoing request and fills its read buffer from a configurable FIFO. Unconfigured read bytes default to zero. Timeout arguments are accepted but ignored. | The integration test checks the first write: address `0x18`, bytes `[0x00, 0x00]` (page selection). All initialization writes are recorded, but the full sequence is not asserted. No DAC register model is simulated. |
 | I2S audio output | `tx_enable` sets an `enabled` flag; `write_all` appends bytes to an in-memory buffer. Timeouts are ignored; no audio clock, DMA, pacing, or physical output exists. | After shutdown, the test checks that TX was enabled and exactly 13,824 zero PCM bytes were written. The fake does not enforce enable-before-write ordering. |
 | Shared SPI bus and LCD transport | `SpiDriver` and `SpiDeviceDriver` provide compatible construction and SPI-write methods. SPI configuration setters and writes are no-ops. | The real ST7789 driver generates commands and pixel data, but SPI bytes are discarded. There is no framebuffer, screenshot, pixel assertion, or bus arbitration check. |
-| LCD/SD GPIO pins | Stand-in types represent GPIO 4 (LCD backlight), 5 (LCD chip select), 27 (LCD data/command), 13 (SD chip select), and `AnyIOPin`. `PinDriver::output`, `set_high`, and `set_low` succeed without touching hardware. | Pin levels and transitions are not recorded or asserted. The screen's backlight decisions still run. |
+| LCD/SD GPIO pins | Stand-in types represent GPIO 4 (LCD backlight), 5 (LCD chip select), 27 (LCD data/command), 13 (SD chip select), and `AnyIOPin`. `PinDriver::output`, `set_high`, and `set_low` touch no hardware. Each pin shares a `PinState` with its driver: successful writes append the level to `levels`, and setting `fail_next_write` makes the next write return `EspError` without changing the level. | Tests assert backlight levels (for example `[true, false]` for on then sleep) and inject backlight write failures. Other pins' levels are recorded but not asserted. |
 | SD card and SPI host | `SdSpiHostDriver`, `SdCardDriver`, and `SdCardConfiguration` are construction stubs. | No SD commands, sectors, card detection, controller behavior, or SPI transfers are emulated. |
 | FAT filesystem and VFS mount | `Fatfs::new_sdcard` and `MountedFatfs::mount` return placeholder wrappers. Mounting does not create or mount a filesystem. The test creates a temporary host directory and passes it to the real SD actor. | Real file creation, read-back, deletion, directory scanning, and MP3 reads run against that directory. This does not test FAT semantics or real card mounting. |
 | Hardware delays | `FreeRtos::delay_ms` and the `Ets` delay implementation return immediately. | Delay durations and real timing are not checked. Mailbox blocking and host thread scheduling remain real. |
@@ -111,7 +111,39 @@ The actor-flow test in [src/actor_tests.rs](src/actor_tests.rs) is named
 6. Assert successful worker completion, the first I2C write, I2S TX enabled,
    and exactly `3 * 1152 * 2 * 2 = 13,824` zero PCM bytes.
 
+Two screen requirement tests in the same file run only the real screen worker.
+They post the screen's input messages directly, so buttons and GPIO interrupts
+do not run:
+
+- `given_screen_is_on_when_select_is_long_pressed_then_screen_sleeps` sends
+  `ShortSelectPress(true)` with an unused SD mailbox and asserts the backlight
+  was turned on at startup and then off.
+- `given_screen_on_song_menu_when_up_or_down_is_pressed_then_select_plays_the_highlighted_song`
+  shares three songs, sends Down, Down, Up, then a short select. A test-only
+  recording worker on the real mailbox runtime stands in for SD and stores
+  requests; the test asserts exactly one `DecodeMP3(1)`. Highlight pixels are
+  not checked; the requested position is the observable effect.
+
 ## Coverage and limits
+
+The screen status unit test in [screen.rs](../test_bench/src/screen.rs) calls the
+real initialization and message handler directly, without starting workers. An
+unused SD mailbox satisfies the screen's address dependency. After loading a
+one-song menu, it handles each `SetStatus` value once and immediately asserts
+the updated status. Rendering runs, but this
+asserts status state, not displayed pixels. Physical button input, interrupts,
+and button-to-message mapping are not exercised.
+
+Screen navigation unit tests also send `DownPressed` and `UpPressed` directly
+across a page boundary, asserting the selected song index, text, and page.
+These movement messages are separate from `SetStatus`, which only updates the
+status label.
+
+Screen error unit tests cover the handled select-press failures. A failed
+backlight-off write leaves the backlight on; a failed backlight-on write after
+sleep leaves it off; a closed SD mailbox is tolerated. Each asserts the handler
+continues; the backlight tests also assert recorded levels. Log output is not
+captured or asserted.
 
 An example host-only unit test lives in the `tests` module at the bottom of
 [sd.rs](../test_bench/src/sd.rs). It calls the same private `decoded_to_pcm`
@@ -127,10 +159,10 @@ cargo test --lib sd::tests
 includes the imported production actor sources, not just the mailbox runtime.
 Host library glue, actor-test harness code, and the HTML launcher are explicitly
 excluded; the production files containing in-file unit tests remain included.
-The actor-flow test is a `#[cfg(test)]` library module rather than a separate
-Cargo integration-test target. It still tests all three actors together, but
-shares the library test build with the unit tests to avoid cross-binary copies
-of the production code in coverage.
+The actor tests are a `#[cfg(test)]` library module rather than a separate
+Cargo integration-test target. They still exercise actors through their real
+mailboxes, but share the library test build with the unit tests to avoid
+cross-binary copies of the production code in coverage.
 The fakes crate
 is a path dependency rather than a workspace member, so tests added inside that
 crate would need to be run separately with its own manifest. Keep exclusions
