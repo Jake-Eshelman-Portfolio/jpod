@@ -184,7 +184,7 @@ impl Screen<'_> {
         let songs_per_screen = Self::MAX_SONGS_PER_SCREEN;
         let songs = Arc::clone(&self.songs_reference);
 
-        let start = (self.current_position / songs_per_screen) * songs_per_screen;              
+        let start = self.current_page() * songs_per_screen;
 
         let end = start
             .saturating_add(songs_per_screen)
@@ -209,6 +209,10 @@ impl Screen<'_> {
         }
     }
 
+    fn current_page(&self) -> usize {
+        self.current_position / Self::MAX_SONGS_PER_SCREEN
+    }
+
     fn handle_message(&mut self, message: ScreenMessage) -> ControlFlow<()> {
         match message {
             ScreenMessage::ShareSongs(songs) => {
@@ -225,21 +229,21 @@ impl Screen<'_> {
                 }
             }
             ScreenMessage::DownPressed => {
-                let previous_page = self.current_position / Self::MAX_SONGS_PER_SCREEN;
+                let previous_page = self.current_page();
                 self.clear_highlight();
                 self.update_menu_position(ScreenStatus::DownPressed);
                 // Only redraw if the page has changed
-                if self.current_position / Self::MAX_SONGS_PER_SCREEN != previous_page {
+                if self.current_page() != previous_page {
                     self.draw_current_page();
                 }
                 self.set_highlight();
             }
             ScreenMessage::UpPressed => {
-                let previous_page = self.current_position / Self::MAX_SONGS_PER_SCREEN;
+                let previous_page = self.current_page();
                 self.clear_highlight();
                 self.update_menu_position(ScreenStatus::UpPressed);
                 // Only redraw if the page has changed
-                if self.current_position / Self::MAX_SONGS_PER_SCREEN != previous_page {
+                if self.current_page() != previous_page {
                     self.draw_current_page();
                 }
                 self.set_highlight();
@@ -351,10 +355,42 @@ fn setup<'spi>(
 }
 
 #[cfg(all(test, not(target_os = "espidf")))]
-mod tests{
+mod tests {
+    use super::*;
+    use crate::active_object::mailbox;
+    use std::num::NonZeroUsize;
 
-    // #[test]
-    // fn 
+    #[test]
+    fn given_start_position_is_on_last_song_and_down_is_pressed_screen_updates_to_next() {
+        let bus = SpiDriver::default();
+        let (sd_address, _sd_mailbox) = mailbox(NonZeroUsize::new(1).unwrap());
+        let mut screen = initialize_screen(
+            &bus,
+            Default::default(),
+            Default::default(),
+            Default::default(),
+            sd_address,
+        )
+        .unwrap();
+        screen.songs_reference = Arc::new(
+            (0..=Screen::MAX_SONGS_PER_SCREEN)
+                .map(|index| Song {
+                    path: Default::default(),
+                    name: format!("Song {index}"),
+                })
+                .collect(),
+        );
+        screen.current_position = Screen::MAX_SONGS_PER_SCREEN - 1;
+        screen.current_text = screen.songs_reference[screen.current_position].name.clone();
+        assert_eq!(screen.current_page(), 0);
 
+        assert_eq!(
+            screen.handle_message(ScreenMessage::DownPressed),
+            ControlFlow::Continue(())
+        );
 
+        assert_eq!(screen.current_position, Screen::MAX_SONGS_PER_SCREEN);
+        assert_eq!(screen.current_text, "Song 13");
+        assert_eq!(screen.current_page(), 1);
+    }
 }
